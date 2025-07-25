@@ -61,39 +61,77 @@ export default function LessonPage({ params }: { params: { phase: string; lesson
   let outputs: OutputFile[] = [];
   try {
     const dir = path.join(base, 'outputs');
-    const files = fs.readdirSync(dir).filter(f => f.endsWith('.md'));
-    outputs = files.map(f => {
-      const raw = fs.readFileSync(path.join(dir, f), 'utf-8');
-      const { meta, body } = parseFrontmatter(raw);
-      return {
-        filename: f,
-        name: meta.name ?? f.replace('.md', ''),
-        description: meta.description ?? '',
-        body,
-      };
-    });
-  } catch {}
+    if (fs.existsSync(dir)) {
+      const filesList = fs.readdirSync(dir);
+      if (Array.isArray(filesList)) {
+        const parsedOutputs: OutputFile[] = [];
+        filesList.forEach((f: string) => {
+          if (f.endsWith('.md')) {
+            const filePath = path.join(dir, f);
+            if (fs.statSync(filePath).isFile()) {
+              const raw = fs.readFileSync(filePath, 'utf-8');
+              const { meta, body } = parseFrontmatter(raw);
+              parsedOutputs.push({
+                filename: f,
+                name: meta.name ?? f.replace('.md', ''),
+                description: meta.description ?? '',
+                body,
+              });
+            }
+          }
+        });
+        outputs = parsedOutputs;
+      }
+    }
+  } catch (err) {
+    // console.error("Error reading outputs:", err);
+  }
 
   /* ── Code files ── */
   let codeFiles: CodeFile[] = [];
   try {
     const dir = path.join(base, 'code');
-    const files = fs.readdirSync(dir).filter(f => !f.startsWith('.'));
-    codeFiles = files.map(f => {
-      const stat = fs.statSync(path.join(dir, f));
-      return { filename: f, sizeBytes: stat.size, ext: path.extname(f).slice(1) };
-    });
-  } catch {}
+    if (fs.existsSync(dir)) {
+      const filesList = fs.readdirSync(dir);
+      if (Array.isArray(filesList)) {
+        const parsedCodeFiles: CodeFile[] = [];
+        filesList.forEach((f: string) => {
+          if (!f.startsWith('.')) {
+            const filePath = path.join(dir, f);
+            if (fs.statSync(filePath).isFile()) {
+              const stat = fs.statSync(filePath);
+              parsedCodeFiles.push({ filename: f, sizeBytes: stat.size, ext: path.extname(f).slice(1) });
+            }
+          }
+        });
+        codeFiles = parsedCodeFiles;
+      }
+    }
+  } catch (err) {
+    // console.error("Error reading code files:", err);
+  }
 
   /* ── Quiz ── */
   let quiz: { questions: QuizQuestion[] } | null = null;
   try {
     const raw = fs.readFileSync(path.join(base, 'quiz.json'), 'utf-8');
     const parsed = JSON.parse(raw);
+    let rawQuestions: any[] = [];
     if (Array.isArray(parsed)) {
-      quiz = { questions: parsed };
+      rawQuestions = parsed;
     } else if (parsed && Array.isArray(parsed.questions)) {
-      quiz = { questions: parsed.questions };
+      rawQuestions = parsed.questions;
+    }
+    if (rawQuestions.length > 0) {
+      quiz = {
+        questions: rawQuestions.map((q: any) => ({
+          stage: q.stage || 'post',
+          question: q.question || q.q || '',
+          options: q.options || q.choices || [],
+          correct: q.correct ?? q.answer ?? 0,
+          explanation: q.explanation || ''
+        }))
+      };
     }
   } catch {}
 
