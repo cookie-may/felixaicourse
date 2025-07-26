@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --font-heading: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --bg: #0d0d18;
+    --bg-surface: #191930;
+    --bg-surface-hover: #222245;
+    --border: #3a3a5c;
+    --text: #f0ede8;
+    --text-muted: #b0aec0;
+    --accent: #ff6b6b;
+    --accent-hover: #ff8585;
+    --secondary: #6ba3ff;
+    --complete: #5ab88f;
+    --planned: #807060;
+    --shadow-color: #ff6b6b;
+    --dot-color: rgba(255, 255, 255, 0.04);
+    --overlay-bg: rgba(13, 13, 24, 0.88);
+    --modal-bg: #141428;
+    --header-bg: rgba(13, 13, 24, 0.94);
+    --code-bg: #111122;
+  }
+
+  [data-theme="light"] {
+    --bg: #fdfbf7;
+    --bg-surface: #ffffff;
+    --bg-surface-hover: #f5f0ea;
+    --border: #e5e0d8;
+    --text: #2d2d2d;
+    --text-muted: #6b6b6b;
+    --accent: #ff4d4d;
+    --accent-hover: #e63e3e;
+    --secondary: #2d5da1;
+    --complete: #2e8b57;
+    --planned: #a08060;
+    --shadow-color: #2d2d2d;
+    --dot-color: rgba(0, 0, 0, 0.04);
+    --overlay-bg: rgba(253, 251, 247, 0.85);
+    --modal-bg: #ffffff;
+    --header-bg: rgba(253, 251, 247, 0.92);
+    --code-bg: #f0ece4;
+  }
+
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    @apply bg-dark-400 text-gray-100 font-sans antialiased;
+    background-color: var(--bg);
+    background-image: radial-gradient(var(--dot-color) 1px, transparent 1px);
+    background-size: 24px 24px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 18px;
+    line-height: 1.6;
+  }
+
+  html {
+    @apply scroll-smooth;
+    scroll-padding-top: 80px;
+  }
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+
+  .font-body {
+    font-family: var(--font-body);
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  .wobbly {
+    border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  }
+
+  .shadow-hard {
+    box-shadow: 4px 4px 0 var(--shadow-color);
+  }
+
+  .shadow-hard-lg {
+    box-shadow: 6px 6px 0 var(--shadow-color);
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 bg-clip-text text-transparent;
+  }
+
+  .glass {
+    @apply bg-white/5 backdrop-blur-md border border-white/10;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* Phase card animation */
+.phase-card {
+  @apply transition-all duration-300 cursor-pointer;
+}
+
+.phase-card:hover {
+  @apply transform -translate-y-1;
+  box-shadow: 0 10px 40px rgba(249, 115, 22, 0.15);
+}
+
+/* Fade in animation */
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Pathway scroll animation */
+@keyframes scroll-pathway {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.scroll-pathway {
+  animation: scroll-pathway 20s linear infinite;
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  @apply fixed inset-0 bg-black/70 backdrop-blur-sm z-50;
+}
+
+/* Progress bar animation */
+@keyframes progress-shine {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.progress-shine::after {
+  content: '';
+  @apply absolute top-0 bottom-0 w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent;
+  animation: progress-shine 2s infinite;
+}
+
+/* Lesson content scrollbar */
+.lesson-content pre::-webkit-scrollbar {
+  height: 8px;
+}
+
+.lesson-content pre::-webkit-scrollbar-track {
+  background: var(--bg-surface);
+}
+
+.lesson-content pre::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.lesson-content pre::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
