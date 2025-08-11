@@ -1,320 +1,366 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { PHASES, getTotalLessons, getCompletedLessons } from '@/data/phases';
-import { GLOSSARY } from '@/data/glossary';
+import { useEffect, useState, useRef } from 'react';
+import Image from 'next/image';
+import { PHASES, getTotalLessons } from '@/data/phases';
 import { useProgress } from '@/components/ProgressProvider';
 import PhaseModal from '@/components/PhaseModal';
 
-const PATHWAY_ITEMS = [
-  'Math', 'ML', 'Deep Learning', 'Transformers', 'LLMs', 'Agents', 'Production',
-  'Math', 'ML', 'Deep Learning', 'Transformers', 'LLMs', 'Agents', 'Production',
-  'Math', 'ML', 'Deep Learning', 'Transformers', 'LLMs', 'Agents', 'Production',
+/* ── ticker items ─────────────────────────────────────────── */
+const TICKS = [
+  'Math Foundations','Deep Learning','Transformers','LLMs from Scratch',
+  'Agent Engineering','Multi-Agent Swarms','Production AI','Computer Vision',
+  'NLP','Reinforcement Learning','Generative AI','Speech & Audio','Ethics',
+  'Math Foundations','Deep Learning','Transformers','LLMs from Scratch',
+  'Agent Engineering','Multi-Agent Swarms','Production AI','Computer Vision',
+  'NLP','Reinforcement Learning','Generative AI','Speech & Audio','Ethics',
 ];
 
-const ROTATIONS = [-1.5, 0.8, -0.7, 1.2, -1, 0.5, -0.3, 1.4, -1.2, 0.6, -0.8, 1.1, -0.4, 0.9, -1.3, 0.7, -0.6, 1.3, -0.9, 0.4];
+/* ── lang color map ───────────────────────────────────────── */
+const LANG_CLR: Record<string, { bg: string; color: string; glow: string }> = {
+  Python:     { bg: '#141e08', color: '#7ab648', glow: 'rgba(122,182,72,0.35)' },
+  TS:         { bg: '#08121e', color: '#378add', glow: 'rgba(55,138,221,0.35)' },
+  TypeScript: { bg: '#08121e', color: '#378add', glow: 'rgba(55,138,221,0.35)' },
+  Rust:       { bg: '#1e0c08', color: '#d85a30', glow: 'rgba(216,90,48,0.35)'  },
+  Julia:      { bg: '#081414', color: '#1d9e75', glow: 'rgba(29,158,117,0.35)' },
+};
 
-function AnimatedNumber({ target, duration = 1200 }: { target: number; duration?: number }) {
-  const [value, setValue] = useState(0);
-
-  useEffect(() => {
-    let startTime: number;
-    const animate = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(Math.round(eased * target));
-      if (progress < 1) requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
-  }, [target, duration]);
-
-  return <span>{value}</span>;
+function phaseLangs(phase: typeof PHASES[0]) {
+  const seen = new Set<string>();
+  phase.lessons.forEach(l =>
+    l.lang.split(',').forEach(x => {
+      const t = x.trim();
+      if (t && t !== '—') seen.add(t === 'TypeScript' ? 'TS' : t);
+    })
+  );
+  return Array.from(seen).slice(0, 3);
 }
 
+/* ── animated counter ─────────────────────────────────────── */
+function Counter({ to }: { to: number }) {
+  const [v, setV] = useState(0);
+  const ran = useRef(false);
+  useEffect(() => {
+    if (ran.current) return;
+    ran.current = true;
+    let t: number;
+    const tick = (ts: number, start: number) => {
+      const p = Math.min((ts - start) / 1000, 1);
+      setV(Math.round((1 - Math.pow(1 - p, 3)) * to));
+      if (p < 1) t = requestAnimationFrame(ts2 => tick(ts2, start));
+    };
+    t = requestAnimationFrame(ts => tick(ts, ts));
+    return () => cancelAnimationFrame(t);
+  }, [to]);
+  return <>{v}</>;
+}
+
+/* ── segmented progress bar ───────────────────────────────── */
+function SegBar({ pct, full = false }: { pct: number; full?: boolean }) {
+  const N = full ? 16 : 10;
+  const filled = Math.floor(pct / (100 / N));
+  return (
+    <div className="seg-bar">
+      {Array.from({ length: N }).map((_, i) => (
+        <div key={i} className={`seg ${i < filled ? (full ? 'filled-complete' : 'filled') : ''}`} />
+      ))}
+    </div>
+  );
+}
+
+/* ── feature card data ────────────────────────────────────── */
+const FEATS = [
+  { icon: '⚙', title: 'Build, don\'t import', desc: 'Implement every algorithm from raw math. You write the backprop, the tokenizer, the attention.' },
+  { icon: '⌨', title: 'Real code, real projects', desc: 'Python, TypeScript, Rust, Julia. Every lesson has runnable code. No slides, no theory-only.' },
+  { icon: '✦', title: 'Ship something reusable', desc: 'Each lesson produces a prompt, skill, agent, or MCP server. Your toolkit grows every phase.' },
+  { icon: '◎', title: 'Free & open source', desc: 'MIT licensed. Clone it, fork it, learn at your own pace. No paywall, no gatekeeping.' },
+];
+
+/* ═══════════════════════════════════════════════════════════ */
 export default function HomePage() {
-  const [selectedPhase, setSelectedPhase] = useState<number | null>(null);
+  const [sel, setSel] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
   const { completedLessons, getPhaseProgress } = useProgress();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
-  const totalLessons = getTotalLessons();
-  const totalPhases = PHASES.length;
-  const staticCompleted = getCompletedLessons();
-  const userCompleted = mounted ? completedLessons.size : 0;
-  const totalCompleted = staticCompleted + (userCompleted > 0 ? userCompleted : 0);
-
-  const handlePhaseClick = (index: number) => {
-    setSelectedPhase(index);
-  };
-
-  const closeModal = () => {
-    setSelectedPhase(null);
-  };
+  const total    = getTotalLessons();
+  const userDone = mounted ? completedLessons.size : 0;
+  const overallPct = total > 0 && userDone > 0 ? Math.round((userDone / total) * 100) : 0;
 
   return (
-    <>
-      {/* Hero Section */}
-      <section
-        className="min-h-screen flex items-center justify-center relative overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, #0d0d18 0%, #141430 40%, #0d0d18 100%)'
-        }}
-      >
-        <div className="text-center px-6 py-20 max-w-3xl relative z-10">
-          <div
-            className="inline-block px-4 py-1 rounded-full text-sm font-mono mb-6 border"
-            style={{
-              color: 'var(--accent)',
-              borderColor: 'rgba(255, 107, 107, 0.3)',
-              background: 'rgba(255, 107, 107, 0.08)'
-            }}
-          >
-            Open Source · MIT License · ~290 hours
+    <div style={{ paddingTop: '56px', minHeight: '100vh' }}>
+
+      {/* ── HERO ─────────────────────────────────────────── */}
+      <section style={{
+        padding: 'clamp(48px,8vw,88px) 1.5rem clamp(48px,6vw,72px)',
+        textAlign: 'center',
+        borderBottom: '1px solid var(--border)',
+        position: 'relative',
+      }}>
+        {/* corner decorations */}
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '40px', height: '40px', borderTop: '2px solid var(--accent)', borderLeft: '2px solid var(--accent)', boxShadow: '-2px -2px 8px var(--accent-glow)' }} />
+        <div style={{ position: 'absolute', top: 0, right: 0, width: '40px', height: '40px', borderTop: '2px solid var(--accent)', borderRight: '2px solid var(--accent)', boxShadow: '2px -2px 8px var(--accent-glow)' }} />
+
+        <div style={{ maxWidth: '680px', margin: '0 auto' }}>
+          {/* badge */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            background: 'var(--accent-dim)', border: '1px solid var(--accent-border)',
+            color: 'var(--accent)', fontSize: '10px',
+            fontFamily: 'var(--pixel-font)', letterSpacing: '0.5px',
+            padding: '6px 14px', marginBottom: '28px',
+          }}>
+            <div style={{ width: '5px', height: '5px', background: 'var(--accent)', boxShadow: '0 0 6px var(--accent-glow)' }} />
+            OPEN SOURCE · MIT · ~290H
           </div>
 
-          <h1 className="font-heading text-5xl md:text-7xl font-bold mb-4">
-            <span className="block" style={{ color: '#e8e5df' }}>AI Engineering</span>
-            <span className="block" style={{ color: 'var(--accent)' }}>from Scratch</span>
+          {/* pixel cat logo */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+            <Image
+              src="/logo.png" alt="felix" width={88} height={88}
+              className="logo-glow"
+              style={{ borderRadius: '8px' }}
+            />
+          </div>
+
+          {/* headline */}
+          <h1 style={{ margin: '0 0 16px', lineHeight: 1.2 }}>
+            <span style={{
+              display: 'block',
+              fontFamily: 'var(--pixel-font)',
+              fontSize: 'clamp(14px,3vw,20px)',
+              color: 'var(--text)',
+              letterSpacing: '1px',
+              marginBottom: '8px',
+            }}>
+              LEARN AI.
+            </span>
+            <span style={{
+              display: 'block',
+              fontFamily: 'var(--pixel-font)',
+              fontSize: 'clamp(14px,3vw,20px)',
+              color: 'var(--accent)',
+              textShadow: '0 0 12px var(--accent-glow), 0 0 36px rgba(232,108,44,0.3)',
+              letterSpacing: '1px',
+            }}>
+              BUILD IT. SHIP IT.
+            </span>
           </h1>
 
-          <p className="text-lg md:text-xl mb-8 max-w-xl mx-auto" style={{ color: '#9a9aaa' }}>
-            260+ lessons across 20 phases. Build neural networks, transformers, and LLMs from first principles. Python, TypeScript, Rust, Julia.
+          <p style={{ fontSize: '14px', color: 'var(--text-muted)', maxWidth: '440px', margin: '0 auto 36px', lineHeight: 1.75 }}>
+            260+ lessons across 20 phases. From linear algebra to autonomous agent swarms.
+            Python, TypeScript, Rust, Julia.
           </p>
 
-          {/* Stats */}
-          <div className="flex justify-center gap-8 md:gap-12 mb-8">
-            <div className="text-center">
-              <span className="block text-4xl font-bold font-mono" style={{ color: 'var(--accent)' }}>
-                <AnimatedNumber target={totalLessons} />
-              </span>
-              <span className="text-xs uppercase tracking-wider" style={{ color: '#9a9aaa' }}>Lessons</span>
-            </div>
-            <div className="text-center">
-              <span className="block text-4xl font-bold font-mono" style={{ color: 'var(--accent)' }}>
-                {totalPhases}
-              </span>
-              <span className="text-xs uppercase tracking-wider" style={{ color: '#9a9aaa' }}>Phases</span>
-            </div>
-            <div className="text-center">
-              <span className="block text-4xl font-bold font-mono" style={{ color: 'var(--accent)' }}>
-                4
-              </span>
-              <span className="text-xs uppercase tracking-wider" style={{ color: '#9a9aaa' }}>Languages</span>
-            </div>
-            <div className="text-center">
-              <span className="block text-4xl font-bold font-mono" style={{ color: 'var(--accent)' }}>
-                {mounted && totalCompleted}
-              </span>
-              <span className="text-xs uppercase tracking-wider" style={{ color: '#9a9aaa' }}>Complete</span>
-            </div>
+          {/* stats */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 'clamp(24px,5vw,52px)', marginBottom: '36px', flexWrap: 'wrap' }}>
+            {[
+              { val: total,    suffix: '+', label: 'LESSONS',   anim: true  },
+              { val: 20,       suffix: '',  label: 'PHASES',    anim: false },
+              { val: 4,        suffix: '',  label: 'LANGUAGES', anim: false },
+              { val: userDone, suffix: '',  label: 'DONE',      anim: true  },
+            ].map((s, i) => (
+              <div key={i} style={{ textAlign: 'center' }}>
+                <div style={{
+                  fontFamily: 'var(--pixel-font)',
+                  fontSize: 'clamp(12px,2.5vw,18px)',
+                  color: i === 3 && userDone > 0 ? 'var(--complete)' : 'var(--accent)',
+                  textShadow: i === 3 && userDone > 0
+                    ? '0 0 10px var(--complete-glow)'
+                    : '0 0 10px var(--accent-glow)',
+                  marginBottom: '6px',
+                  letterSpacing: '1px',
+                }}>
+                  {s.anim ? <Counter to={s.val} /> : s.val}{s.suffix}
+                </div>
+                <div style={{ fontFamily: 'var(--pixel-font)', fontSize: '7px', color: 'var(--text-dim)', letterSpacing: '1px' }}>
+                  {s.label}
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* CTA Buttons */}
-          <div className="flex gap-4 justify-center flex-wrap mb-6">
-            <a
-              href="#phases"
-              className="px-6 py-3 rounded-full font-bold border-2 transition-all hover:-translate-y-0.5 hover:shadow-hard"
-              style={{
-                background: 'var(--accent)',
-                borderColor: 'var(--accent)',
-                color: '#fff'
-              }}
-            >
-              Explore Phases
-            </a>
-            <a
-              href="https://github.com/rohitg00/ai-engineering-from-scratch"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-6 py-3 rounded-full font-bold border-2 transition-all hover:-translate-y-0.5"
-              style={{
-                background: 'transparent',
-                borderColor: '#e8e5df',
-                color: '#e8e5df'
-              }}
-            >
-              ⭐ Star on GitHub
-            </a>
+          {/* CTAs */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <a href="#phases" className="btn-primary">▶ EXPLORE PHASES</a>
+            <a href="https://github.com/cookie-may/felixforlearnai" target="_blank" rel="noopener noreferrer"
+              className="btn-ghost">⭐ STAR ON GITHUB</a>
           </div>
-
-          <a
-            href="https://github.com/rohitg00/ai-engineering-from-scratch/stargazers"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm"
-            style={{ color: '#ffb800', textDecoration: 'none' }}
-          >
-            ⭐ 1,000+ stars this week
-          </a>
         </div>
       </section>
 
-      {/* Pathway Strip */}
-      <div
-        className="py-5 border-y-2 border-dashed overflow-hidden"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
-      >
-        <div className="flex gap-4 scroll-pathway whitespace-nowrap">
-          {PATHWAY_ITEMS.map((item, i) => (
-            <span key={i} className="flex items-center gap-4">
-              <span
-                className="px-4 py-2 rounded-full font-heading font-bold border-2"
-                style={{
-                  background: 'var(--bg)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)'
-                }}
-              >
-                {item}
-              </span>
-              <span style={{ color: 'var(--accent)' }}>~&gt;</span>
+      {/* ── TICKER ───────────────────────────────────────── */}
+      <div style={{ overflow: 'hidden', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+        <div className="ticker-track">
+          {TICKS.map((t, i) => (
+            <span key={i} style={{
+              fontSize: '9px', fontFamily: 'var(--pixel-font)',
+              color: 'var(--text-dim)', padding: '10px 0',
+              display: 'inline-flex', alignItems: 'center',
+            }}>
+              <span style={{
+                color: 'var(--accent)', margin: '0 14px 0 14px',
+                textShadow: '0 0 6px var(--accent-glow)',
+              }}>▸</span>
+              {t.toUpperCase()}
             </span>
           ))}
         </div>
       </div>
 
-      {/* Why This Course Section */}
-      <section className="py-20 px-6 border-b-2 border-dashed" style={{ borderColor: 'var(--border)' }}>
-        <div className="max-w-6xl mx-auto">
-          <h2 className="font-heading text-3xl md:text-4xl text-center mb-4">Why This Course</h2>
-          <p className="text-center mb-12" style={{ color: 'var(--text-muted)' }}>
-            What makes us different from the rest
-          </p>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div
-              className="p-6 rounded-2xl border-l-4 border-2 fade-in"
-              style={{
-                background: 'var(--bg-surface)',
-                borderColor: 'var(--border)',
-                borderLeftColor: 'var(--accent)',
-                boxShadow: '4px 4px 0 var(--shadow-color)'
-              }}
-            >
-              <div className="text-3xl mb-3">⚙</div>
-              <h3 className="font-heading text-xl mb-2" style={{ color: 'var(--accent)' }}>Build, Don't Import</h3>
-              <p style={{ color: 'var(--text-muted)' }}>
-                Implement every algorithm from raw math. No magic wrappers. You write the backprop, the tokenizer, the attention mechanism.
-              </p>
+      {/* ── PHASES GRID ──────────────────────────────────── */}
+      <section id="phases" style={{ padding: '48px 1.5rem' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          {/* section header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '3px', height: '18px', background: 'var(--accent)', boxShadow: '0 0 8px var(--accent-glow)' }} />
+              <span style={{ fontFamily: 'var(--pixel-font)', fontSize: '10px', color: 'var(--accent)', textShadow: '0 0 8px var(--accent-glow)', letterSpacing: '0.5px' }}>
+                THE 20 PHASES
+              </span>
             </div>
+            <span style={{ fontSize: '7px', color: 'var(--text-dim)', fontFamily: 'var(--pixel-font)' }}>
+              CLICK TO EXPLORE →
+            </span>
+          </div>
 
-            <div
-              className="p-6 rounded-2xl border-l-4 border-2 fade-in"
-              style={{
-                background: 'var(--bg-surface)',
-                borderColor: 'var(--border)',
-                borderLeftColor: 'var(--accent)',
-                boxShadow: '4px 4px 0 var(--shadow-color)'
-              }}
-            >
-              <div className="text-3xl mb-3">☰</div>
-              <h3 className="font-heading text-xl mb-2" style={{ color: 'var(--accent)' }}>20 Phases of Depth</h3>
-              <p style={{ color: 'var(--text-muted)' }}>
-                A structured path from calculus and linear algebra through LLMs, agents, multi-agent swarms, and production deployment.
-              </p>
-            </div>
+          {/* grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(178px, 1fr))',
+            gap: '2px',
+            background: 'var(--border-dim)',
+            border: '1px solid var(--border)',
+          }}>
+            {PHASES.map((phase, idx) => {
+              const paths = phase.lessons.filter(l => l.path).map(l => l.path!);
+              const prog  = getPhaseProgress(paths);
+              const pct   = mounted ? prog.percentage : 0;
+              const langs = phaseLangs(phase);
 
-            <div
-              className="p-6 rounded-2xl border-l-4 border-2 fade-in"
-              style={{
-                background: 'var(--bg-surface)',
-                borderColor: 'var(--border)',
-                borderLeftColor: 'var(--accent)',
-                boxShadow: '4px 4px 0 var(--shadow-color)'
-              }}
-            >
-              <div className="text-3xl mb-3">⌨</div>
-              <h3 className="font-heading text-xl mb-2" style={{ color: 'var(--accent)' }}>Real Code, Real Projects</h3>
-              <p style={{ color: 'var(--text-muted)' }}>
-                Python, TypeScript, Rust, Julia. Every lesson has runnable code, not slides. Build a GPT, a RAG system, an agent team.
-              </p>
-            </div>
+              return (
+                <div key={phase.id} className="phase-card" onClick={() => setSel(idx)}
+                  style={{ padding: '16px' }}>
+                  {/* phase number */}
+                  <div style={{
+                    fontFamily: 'var(--pixel-font)', fontSize: '8px',
+                    color: 'var(--accent)',
+                    textShadow: pct === 100 ? '0 0 8px var(--complete-glow)' : '0 0 6px var(--accent-glow)',
+                    marginBottom: '8px', letterSpacing: '0.5px',
+                  }}>
+                    {pct === 100 ? '✓' : '□'} PH{String(phase.id).padStart(2,'0')}
+                  </div>
 
-            <div
-              className="p-6 rounded-2xl border-l-4 border-2 fade-in"
-              style={{
-                background: 'var(--bg-surface)',
-                borderColor: 'var(--border)',
-                borderLeftColor: 'var(--accent)',
-                boxShadow: '4px 4px 0 var(--shadow-color)'
-              }}
-            >
-              <div className="text-3xl mb-3">✿</div>
-              <h3 className="font-heading text-xl mb-2" style={{ color: 'var(--accent)' }}>Free & Open Source</h3>
-              <p style={{ color: 'var(--text-muted)' }}>
-                The entire curriculum is on GitHub. Clone it, fork it, learn at your own pace. No paywall, no signup, no gatekeeping.
-              </p>
-            </div>
+                  {/* name */}
+                  <div style={{ fontSize: '12px', color: '#d4c0a8', fontWeight: '500', marginBottom: '10px', lineHeight: 1.35 }}>
+                    {phase.name}
+                  </div>
+
+                  {/* seg progress bar */}
+                  <SegBar pct={pct} />
+
+                  {/* lesson count */}
+                  <div style={{ fontSize: '10px', color: 'var(--text-dim)', marginTop: '6px', marginBottom: '8px', fontFamily: 'var(--mono-font)' }}>
+                    {mounted && prog.completed > 0
+                      ? <span><span style={{ color: 'var(--complete)', textShadow: '0 0 6px var(--complete-glow)' }}>{prog.completed}</span>/{phase.lessons.length}</span>
+                      : `${phase.lessons.length} lessons`
+                    }
+                  </div>
+
+                  {/* lang pills */}
+                  <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
+                    {langs.map(l => {
+                      const c = LANG_CLR[l] ?? { bg: 'var(--bg)', color: 'var(--text-dim)', glow: 'transparent' };
+                      return (
+                        <span key={l} style={{
+                          fontSize: '9px', padding: '1px 6px',
+                          background: c.bg, color: c.color,
+                          border: `1px solid ${c.color}22`,
+                        }}>
+                          {l}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* Phases Section */}
-      <section id="phases" className="py-20 px-6 border-b-2 border-dashed" style={{ borderColor: 'var(--border)' }}>
-        <div className="max-w-6xl mx-auto">
-          <h2 className="font-heading text-3xl md:text-4xl text-center mb-4">The 20 Phases</h2>
-          <p className="text-center mb-12" style={{ color: 'var(--text-muted)' }}>
-            Click any phase to see its lessons
-          </p>
+      {/* ── WHY ──────────────────────────────────────────── */}
+      <section style={{ padding: '0 1.5rem 48px', borderTop: '1px solid var(--border)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', paddingTop: '48px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+            <div style={{ width: '3px', height: '18px', background: 'var(--accent)', boxShadow: '0 0 8px var(--accent-glow)' }} />
+            <span style={{ fontFamily: 'var(--pixel-font)', fontSize: '10px', color: 'var(--accent)', textShadow: '0 0 8px var(--accent-glow)', letterSpacing: '0.5px' }}>
+              WHY THIS COURSE
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '2px', background: 'var(--border-dim)' }}>
+            {FEATS.map(f => (
+              <div key={f.title} style={{ background: 'var(--bg-card)', padding: '20px 18px', border: '0 none' }}>
+                <div style={{ fontSize: '18px', marginBottom: '10px', color: 'var(--accent)', textShadow: '0 0 10px var(--accent-glow)' }}>{f.icon}</div>
+                <div style={{ fontSize: '12px', fontWeight: '600', color: '#d4c0a8', marginBottom: '7px' }}>{f.title}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-dim)', lineHeight: 1.6 }}>{f.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {PHASES.map((phase, index) => {
-              const rot = ROTATIONS[index % ROTATIONS.length];
-              const lessonPaths = phase.lessons
-                .filter(l => l.url)
-                .map(l => {
-                  const match = l.url?.match(/(phases\/[^/]+\/[^/]+)\/?$/);
-                  return match ? match[1] : '';
-                })
-                .filter(Boolean);
-              const progress = getPhaseProgress(lessonPaths);
-              const doneCount = phase.lessons.filter(l => l.status === 'complete').length + (progress.completed > 0 ? progress.completed : 0);
-              const totalCount = phase.lessons.length;
-              const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+      {/* ── ROADMAP ──────────────────────────────────────── */}
+      <section id="roadmap" style={{ padding: '0 1.5rem 48px', borderTop: '1px solid var(--border)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', paddingTop: '48px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+            <div style={{ width: '3px', height: '18px', background: 'var(--accent)', boxShadow: '0 0 8px var(--accent-glow)' }} />
+            <span style={{ fontFamily: 'var(--pixel-font)', fontSize: '10px', color: 'var(--accent)', textShadow: '0 0 8px var(--accent-glow)', letterSpacing: '0.5px' }}>
+              ROADMAP
+            </span>
+          </div>
+
+          {/* overall bar */}
+          <div style={{ marginBottom: '24px', paddingLeft: '13px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginBottom: '6px', fontFamily: 'var(--mono-font)' }}>
+              overall progress — {userDone}/{total} lessons
+              {mounted && overallPct > 0 && (
+                <span style={{ color: 'var(--accent)', marginLeft: '8px', textShadow: '0 0 6px var(--accent-glow)' }}>
+                  [{overallPct}%]
+                </span>
+              )}
+            </div>
+            <SegBar pct={overallPct} full />
+          </div>
+
+          {/* phase pills */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px,1fr))', gap: '2px', background: 'var(--border-dim)' }}>
+            {PHASES.map(phase => {
+              const paths = phase.lessons.filter(l => l.path).map(l => l.path!);
+              const prog  = mounted ? getPhaseProgress(paths) : { completed: 0, total: paths.length, percentage: 0 };
+              const done  = mounted && prog.completed === prog.total && prog.total > 0;
 
               return (
-                <div
-                  key={phase.id}
-                  onClick={() => handlePhaseClick(index)}
-                  className="phase-card p-5 rounded-2xl border-2 cursor-pointer transition-all hover:-translate-y-1"
+                <div key={phase.id} onClick={() => setSel(PHASES.indexOf(phase))}
                   style={{
-                    background: 'var(--bg-surface)',
-                    borderColor: 'var(--border)',
-                    borderTopColor: phase.status === 'complete' ? 'var(--complete)' : phase.status === 'in-progress' ? 'var(--accent)' : 'var(--border)',
-                    boxShadow: '4px 4px 0 var(--shadow-color)',
-                    transform: `rotate(${rot}deg)`
+                    background: 'var(--bg-card)', padding: '10px 12px',
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    cursor: 'pointer', transition: 'background 0.15s',
                   }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-card-hover)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-card)')}
                 >
-                  <span
-                    className="block text-xs font-mono font-bold mb-1"
-                    style={{ color: 'var(--accent)' }}
-                  >
-                    {phase.status}
-                  </span>
-                  <span
-                    className="block text-sm font-mono font-bold mb-2"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    Phase {String(phase.id).padStart(2, '0')}
-                  </span>
-                  <h3 className="font-heading font-bold text-lg mb-2" style={{ color: 'var(--text)' }}>
+                  <div style={{
+                    width: '6px', height: '6px', flexShrink: 0,
+                    background: done ? 'var(--complete)' : 'var(--planned)',
+                    boxShadow: done ? '0 0 6px var(--complete-glow)' : 'none',
+                  }} />
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--mono-font)' }}>
+                    <span style={{ color: 'var(--text-dim)', marginRight: '4px' }}>
+                      {String(phase.id).padStart(2,'0')}
+                    </span>
                     {phase.name}
-                  </h3>
-                  <p className="text-sm mb-3 line-clamp-2" style={{ color: 'var(--text-muted)' }}>
-                    {phase.desc}
-                  </p>
-                  <div className="h-1.5 rounded-full overflow-hidden mb-2" style={{ background: 'var(--border)' }}>
-                    <div
-                      className="h-full rounded-full transition-all duration-500"
-                      style={{ width: `${pct}%`, background: 'var(--complete)' }}
-                    />
-                  </div>
-                  <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
-                    {doneCount}/{totalCount} lessons
                   </span>
                 </div>
               );
@@ -323,170 +369,55 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Roadmap Section */}
-      <section id="roadmap" className="py-20 px-6 border-b-2 border-dashed" style={{ borderColor: 'var(--border)' }}>
-        <div className="max-w-6xl mx-auto">
-          <h2 className="font-heading text-3xl md:text-4xl text-center mb-12">Learning Roadmap</h2>
+      {/* ── CTA ──────────────────────────────────────────── */}
+      <section style={{ padding: '0 1.5rem 56px', borderTop: '1px solid var(--border)' }}>
+        <div style={{
+          maxWidth: '1280px', margin: '48px auto 0',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          padding: '36px 32px',
+          textAlign: 'center',
+          position: 'relative',
+        }}>
+          {/* corner accents */}
+          {[['top','left'],['top','right'],['bottom','left'],['bottom','right']].map(([v,h]) => (
+            <div key={`${v}${h}`} style={{
+              position: 'absolute', [v]: '-1px', [h]: '-1px',
+              width: '12px', height: '12px',
+              borderTop: v === 'top' ? '2px solid var(--accent)' : 'none',
+              borderBottom: v === 'bottom' ? '2px solid var(--accent)' : 'none',
+              borderLeft: h === 'left' ? '2px solid var(--accent)' : 'none',
+              borderRight: h === 'right' ? '2px solid var(--accent)' : 'none',
+              boxShadow: '0 0 6px var(--accent-glow)',
+            }} />
+          ))}
 
-          {/* Progress bar */}
-          <div className="max-w-xl mx-auto mb-12">
-            <div className="flex items-center gap-4">
-              <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
-                <div
-                  className="h-full rounded-full transition-all duration-1000"
-                  style={{
-                    width: `${totalCompleted > 0 ? Math.round((totalCompleted / totalLessons) * 100) : 0}%`,
-                    background: 'linear-gradient(90deg, var(--complete), var(--secondary))'
-                  }}
-                />
-              </div>
-              <span className="font-mono font-bold" style={{ color: 'var(--complete)' }}>
-                {totalCompleted > 0 ? Math.round((totalCompleted / totalLessons) * 100) : 0}%
-              </span>
-            </div>
+          <div style={{ fontFamily: 'var(--pixel-font)', fontSize: '12px', color: 'var(--accent)', textShadow: '0 0 12px var(--accent-glow)', marginBottom: '10px' }}>
+            START BUILDING
           </div>
-
-          {/* Phase pills */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {PHASES.map((phase) => (
-              <div
-                key={phase.id}
-                className="px-4 py-3 rounded-xl border-2 flex items-center gap-3 transition-all hover:-translate-y-0.5"
-                style={{
-                  background: 'var(--bg-surface)',
-                  borderColor: 'var(--border)'
-                }}
-              >
-                <div
-                  className="w-3 h-3 rounded-full shrink-0"
-                  style={{
-                    background: phase.status === 'complete' ? 'var(--complete)' : 'var(--planned)'
-                  }}
-                />
-                <span className="text-sm font-mono truncate" style={{ color: 'var(--text)' }}>
-                  {String(phase.id).padStart(2, '0')} {phase.name}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="py-20 px-6 border-b-2 border-dashed" style={{ borderColor: 'var(--border)' }}>
-        <div className="max-w-6xl mx-auto">
-          <h2 className="font-heading text-3xl md:text-4xl text-center mb-12">How It Works</h2>
-
-          <div className="max-w-2xl mx-auto space-y-8">
-            {[
-              { num: 1, title: 'Clone the Repo', desc: 'One command. Everything you need is in the repository.' },
-              { num: 2, title: 'Pick Your Phase', desc: 'Start at Phase 0 or jump to where your knowledge begins.' },
-              { num: 3, title: 'Read the Theory', desc: 'Each lesson explains the concept from first principles.' },
-              { num: 4, title: 'Build It Yourself', desc: 'Implement the algorithm. Run the code. Break things.' },
-              { num: 5, title: 'Check Your Understanding', desc: 'Each phase has exercises. No multiple choice -- real code challenges.' },
-              { num: 6, title: 'Ship the Capstone', desc: 'Phase 19 ties it all together. Build a production AI system.' },
-            ].map((step, i) => (
-              <div key={i} className="flex gap-5">
-                <div
-                  className="w-12 h-12 min-w-12 rounded-full border-2 flex items-center justify-center font-mono font-bold text-xl"
-                  style={{
-                    borderColor: 'var(--accent)',
-                    color: 'var(--accent)',
-                    background: 'var(--bg-surface)'
-                  }}
-                >
-                  {step.num}
-                </div>
-                <div>
-                  <h3 className="font-heading text-xl mb-1" style={{ color: 'var(--text)' }}>{step.title}</h3>
-                  <p style={{ color: 'var(--text-muted)' }}>{step.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Glossary Callout */}
-      <section className="py-20 px-6 border-b-2 border-dashed" style={{ borderColor: 'var(--border)' }}>
-        <div className="max-w-6xl mx-auto">
-          <div
-            className="p-8 rounded-2xl border-2 flex flex-col md:flex-row items-center gap-8"
-            style={{
-              background: 'var(--bg-surface)',
-              borderColor: 'var(--border)',
-              boxShadow: '6px 6px 0 var(--shadow-color)'
-            }}
-          >
-            <div className="flex-1">
-              <h3 className="font-heading text-2xl mb-2" style={{ color: 'var(--accent)' }}>AI Glossary</h3>
-              <p className="mb-4" style={{ color: 'var(--text-muted)' }}>
-                Confused by jargon? We built a glossary that tells you what people <em>say</em> vs what things actually <em>mean</em>.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {GLOSSARY.slice(0, 8).map((entry) => (
-                  <span
-                    key={entry.term}
-                    className="px-3 py-1 rounded-full text-sm font-mono"
-                    style={{
-                      background: 'var(--bg)',
-                      border: '1px solid var(--border)',
-                      color: 'var(--text-muted)'
-                    }}
-                  >
-                    {entry.term}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <a
-              href="/glossary"
-              className="px-6 py-3 rounded-full font-bold border-2 transition-all hover:-translate-y-0.5"
-              style={{
-                background: 'transparent',
-                borderColor: 'var(--accent)',
-                color: 'var(--accent)'
-              }}
-            >
-              Browse All Terms
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-6" style={{ background: 'var(--bg-surface)' }}>
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="font-heading text-3xl mb-4">Start Building</h2>
-          <p className="mb-6" style={{ color: 'var(--text-muted)' }}>
-            One command to begin your AI engineering journey.
+          <p style={{ fontSize: '13px', color: 'var(--text-dim)', marginBottom: '20px' }}>
+            Everything is open source and free. No account required.
           </p>
-          <div
-            className="inline-flex items-center gap-4 px-5 py-3 rounded-2xl border-2"
-            style={{ background: 'var(--code-bg)', borderColor: 'var(--border)' }}
-          >
-            <code className="font-mono text-sm" style={{ color: 'var(--secondary)' }}>
-              git clone https://github.com/rohitg00/ai-engineering-from-scratch.git
-            </code>
-            <button
-              onClick={() => navigator.clipboard.writeText('git clone https://github.com/rohitg00/ai-engineering-from-scratch.git')}
-              className="p-2 hover:scale-110 transition-transform"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              📋
-            </button>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '12px',
+            background: 'var(--code-bg)', border: '1px solid var(--border)',
+            borderLeft: '3px solid var(--accent)',
+            padding: '10px 16px', marginBottom: '24px',
+            fontFamily: 'var(--mono-font)', fontSize: '12px', color: 'var(--accent)',
+            textShadow: '0 0 8px rgba(232,108,44,0.3)',
+          }}>
+            git clone https://github.com/rohitg00/ai-engineering-from-scratch.git
+          </div>
+          <div>
+            <a href="#phases" className="btn-primary">▶ BROWSE PHASES</a>
           </div>
         </div>
       </section>
 
-      {/* Phase Modal */}
-      {selectedPhase !== null && (
-        <PhaseModal
-          phase={PHASES[selectedPhase]}
-          phaseIndex={selectedPhase}
-          onClose={closeModal}
-        />
+      {/* Modal */}
+      {sel !== null && (
+        <PhaseModal phase={PHASES[sel]} phaseIndex={sel} onClose={() => setSel(null)} />
       )}
-    </>
+    </div>
   );
 }

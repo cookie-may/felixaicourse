@@ -4,173 +4,204 @@ import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Phase, Lesson } from '@/data/phases';
 import { useProgress } from './ProgressProvider';
-import { X, Check, Circle, ExternalLink } from 'lucide-react';
+import { X } from 'lucide-react';
 
-interface PhaseModalProps {
-  phase: Phase;
-  phaseIndex: number;
-  onClose: () => void;
+interface Props { phase: Phase; phaseIndex: number; onClose: () => void; }
+
+/* derive route params from lesson.path = "phases/00-setup-and-tooling/01-dev-environment" */
+function routeOf(lesson: Lesson): { phase: string; lesson: string } | null {
+  if (!lesson.path) return null;
+  const parts = lesson.path.split('/');   // ["phases", "00-setup-and-tooling", "01-dev-environment"]
+  if (parts.length !== 3) return null;
+  return { phase: parts[1], lesson: parts[2] };
 }
 
-export default function PhaseModal({ phase, onClose }: PhaseModalProps) {
+/* the key used in localStorage — same as lesson.path */
+function keyOf(lesson: Lesson): string | null {
+  return lesson.path ?? null;
+}
+
+/* segmented bar (reuse style from globals) */
+function SegBar({ pct }: { pct: number }) {
+  const N = 12;
+  const filled = Math.floor(pct / (100 / N));
+  return (
+    <div style={{ display: 'flex', gap: '2px' }}>
+      {Array.from({ length: N }).map((_, i) => (
+        <div key={i} style={{
+          height: '3px', flex: 1,
+          background: i < filled ? 'var(--accent)' : 'var(--border)',
+          boxShadow: i < filled ? '0 0 4px var(--accent-glow)' : 'none',
+        }} />
+      ))}
+    </div>
+  );
+}
+
+export default function PhaseModal({ phase, onClose }: Props) {
   const router = useRouter();
-  const { isComplete, markComplete, markIncomplete } = useProgress();
-  const modalRef = useRef<HTMLDivElement>(null);
+  const { isComplete, markComplete, markIncomplete, getPhaseProgress } = useProgress();
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleEsc);
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', esc);
     document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.removeEventListener('keydown', handleEsc);
-      document.body.style.overflow = '';
-    };
+    return () => { document.removeEventListener('keydown', esc); document.body.style.overflow = ''; };
   }, [onClose]);
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
-  const handleLessonClick = (lesson: Lesson) => {
-    if (lesson.path) {
-      const [phaseSlug, lessonSlug] = lesson.path.split('/');
-      router.push(`/lessons/${phaseSlug}/${lessonSlug}`);
-      onClose();
-    } else if (lesson.url) {
-      window.open(lesson.url, '_blank');
-    }
-  };
-
-  const getLessonPath = (lesson: Lesson): string | null => {
-    if (lesson.path) return lesson.path;
-    if (lesson.url) {
-      const match = lesson.url.match(/phases\/([^/]+)\/([^/]+)/);
-      if (match) return `${match[1]}/${match[2]}`;
-    }
-    return null;
-  };
+  const paths   = phase.lessons.filter(l => l.path).map(l => l.path!);
+  const prog    = getPhaseProgress(paths);
+  const pct     = prog.percentage;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
       style={{
+        position: 'fixed', inset: 0, zIndex: 100,
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         background: 'var(--overlay-bg)',
         backdropFilter: 'blur(6px)',
-        opacity: 1
       }}
-      onClick={handleOverlayClick}
     >
-      <div
-        ref={modalRef}
-        className="w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-t-3xl p-8 border-2"
+      <div ref={ref}
         style={{
+          width: '100%', maxWidth: '680px', maxHeight: '82vh',
+          overflowY: 'auto',
           background: 'var(--modal-bg)',
-          borderColor: 'var(--border)',
-          transform: 'translateY(0)',
-          transition: 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)'
+          borderTop: '2px solid var(--accent)',
+          borderLeft: '1px solid var(--border)',
+          borderRight: '1px solid var(--border)',
+          boxShadow: '0 -4px 40px var(--accent-glow), 0 -1px 0 var(--accent)',
+          padding: '28px 24px 32px',
         }}
+        onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <span className="text-sm font-mono font-bold" style={{ color: 'var(--accent)' }}>
-              Phase {String(phase.id).padStart(2, '0')}
-            </span>
-            <h2 className="font-heading text-2xl mt-1">{phase.name}</h2>
-            <p className="mt-2" style={{ color: 'var(--text-muted)' }}>{phase.desc}</p>
+        {/* header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
+          <div style={{ flex: 1, paddingRight: '16px' }}>
+            <div style={{
+              fontFamily: 'var(--pixel-font)', fontSize: '8px',
+              color: 'var(--accent)', letterSpacing: '0.5px',
+              textShadow: '0 0 8px var(--accent-glow)',
+              marginBottom: '6px',
+            }}>
+              PHASE {String(phase.id).padStart(2,'0')}
+            </div>
+            <h2 style={{ fontSize: '17px', fontWeight: '600', color: 'var(--text)', margin: '0 0 6px', lineHeight: 1.3 }}>
+              {phase.name}
+            </h2>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0 }}>
+              {phase.desc.replace(/[*_~`]/g, '')}
+            </p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:opacity-70 transition-opacity"
-            style={{ color: 'var(--text-muted)' }}
+          <button onClick={onClose}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '2px', flexShrink: 0, transition: 'color 0.15s' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
           >
-            <X className="w-6 h-6" />
+            <X size={16} />
           </button>
         </div>
 
-        {/* Lessons */}
-        <div className="space-y-1">
+        {/* progress */}
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <span style={{ fontSize: '10px', color: 'var(--text-dim)', fontFamily: 'var(--mono-font)' }}>
+              {prog.completed}/{phase.lessons.length} complete
+            </span>
+            <span style={{
+              fontSize: '10px', fontFamily: 'var(--pixel-font)',
+              color: pct > 0 ? 'var(--accent)' : 'var(--text-dim)',
+              textShadow: pct > 0 ? '0 0 6px var(--accent-glow)' : 'none',
+            }}>
+              {pct}%
+            </span>
+          </div>
+          <SegBar pct={pct} />
+        </div>
+
+        {/* lesson list */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border-dim)' }}>
           {phase.lessons.map((lesson, i) => {
-            const lessonPath = getLessonPath(lesson);
-            const userDone = lessonPath ? isComplete(lessonPath) : false;
-            const isDone = lesson.status === 'complete' || userDone;
-            const hasContent = lesson.url || lesson.path;
+            const key     = keyOf(lesson);
+            const route   = routeOf(lesson);
+            /* ONLY check localStorage — never use lesson.status for "done" state */
+            const done    = key ? isComplete(key) : false;
+            const canRead = !!route;
 
             return (
-              <div
-                key={i}
-                className="flex items-center gap-4 p-3 rounded-lg border border-transparent hover:border-[var(--border)] transition-colors"
+              <div key={i}
+                onClick={() => { if (canRead && route) { router.push(`/lessons/${route.phase}/${route.lesson}`); onClose(); } }}
+                style={{
+                  background: 'var(--bg-card)',
+                  padding: '11px 14px',
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  cursor: canRead ? 'pointer' : 'default',
+                  transition: 'background 0.1s, border-color 0.1s',
+                  borderLeft: `3px solid ${done ? 'var(--complete)' : 'transparent'}`,
+                }}
+                onMouseEnter={e => { if (canRead) e.currentTarget.style.background = 'var(--bg-card-hover)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-card)'; }}
               >
-                {/* Status dot */}
-                <div
-                  className="w-2 h-2 rounded-full"
-                  style={{
-                    background: isDone ? 'var(--complete)' : lesson.status === 'planned' ? 'var(--planned)' : 'var(--border)'
-                  }}
-                />
+                {/* status square */}
+                <div style={{
+                  width: '8px', height: '8px', flexShrink: 0,
+                  background: done ? 'var(--complete)' : 'var(--border)',
+                  boxShadow: done ? '0 0 6px var(--complete-glow)' : 'none',
+                }} />
 
-                {/* Lesson name */}
-                <button
-                  onClick={() => handleLessonClick(lesson)}
-                  className="flex-1 text-left font-medium hover:opacity-80"
-                  style={{ color: 'var(--text)', textDecoration: 'none', background: 'none', border: 'none', cursor: 'pointer' }}
-                  disabled={!hasContent}
-                >
-                  <span style={{ opacity: hasContent ? 1 : 0.5 }}>
-                    {lesson.name}
+                {/* index + name */}
+                <span style={{ fontFamily: 'var(--mono-font)', fontSize: '10px', color: 'var(--text-dim)', flexShrink: 0, minWidth: '22px' }}>
+                  {String(i + 1).padStart(2,'0')}
+                </span>
+                <span style={{
+                  flex: 1, fontSize: '13px',
+                  color: canRead ? '#d4c0a8' : 'var(--text-dim)',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {lesson.name}
+                </span>
+
+                {/* type badge */}
+                <span style={{
+                  fontSize: '9px', fontFamily: 'var(--pixel-font)', letterSpacing: '0.3px',
+                  padding: '2px 7px',
+                  color: lesson.type === 'Build' ? 'var(--complete)' : 'var(--accent)',
+                  border: `1px solid ${lesson.type === 'Build' ? 'rgba(114,184,48,0.3)' : 'var(--accent-border)'}`,
+                  background: lesson.type === 'Build' ? 'var(--complete-dim)' : 'var(--accent-dim)',
+                  boxShadow: lesson.type === 'Build' ? '0 0 4px var(--complete-glow)' : '0 0 4px var(--accent-glow)',
+                  flexShrink: 0,
+                }}>
+                  {lesson.type.toUpperCase()}
+                </span>
+
+                {/* read label */}
+                {canRead && (
+                  <span style={{ fontSize: '10px', color: done ? 'var(--complete)' : 'var(--text-dim)', fontFamily: 'var(--pixel-font)', flexShrink: 0, textShadow: done ? '0 0 4px var(--complete-glow)' : 'none' }}>
+                    {done ? '✓' : '▶'}
                   </span>
-                </button>
-
-                {/* Type badge */}
-                <span
-                  className="px-2 py-1 rounded text-xs font-mono font-semibold"
-                  style={{
-                    border: '1px solid var(--border)',
-                    color: lesson.type === 'Build' ? 'var(--complete)' : 'var(--accent)',
-                    borderColor: lesson.type === 'Build'
-                      ? 'rgba(90, 184, 143, 0.35)'
-                      : 'rgba(255, 107, 107, 0.35)'
-                  }}
-                >
-                  {lesson.type}
-                </span>
-
-                {/* Language */}
-                <span className="text-xs font-mono hidden sm:block" style={{ color: 'var(--text-muted)' }}>
-                  {lesson.lang}
-                </span>
-
-                {/* Read button */}
-                {hasContent && (
-                  <button
-                    onClick={() => handleLessonClick(lesson)}
-                    className="px-3 py-1.5 rounded text-sm border transition-colors hover:border-[var(--accent)]"
-                    style={{
-                      borderColor: 'var(--border)',
-                      color: 'var(--text-muted)',
-                      background: 'none'
-                    }}
-                  >
-                    {userDone ? 'Review' : 'Read'}
-                  </button>
                 )}
 
-                {/* Toggle completion */}
-                {lessonPath && (
+                {/* mark done toggle */}
+                {key && (
                   <button
-                    onClick={() => userDone ? markIncomplete(lessonPath) : markComplete(lessonPath)}
-                    className="w-6 h-6 rounded border flex items-center justify-center transition-all hover:border-[var(--accent)]"
+                    onClick={ev => { ev.stopPropagation(); done ? markIncomplete(key) : markComplete(key); }}
+                    title={done ? 'Mark incomplete' : 'Mark complete'}
                     style={{
-                      borderColor: 'var(--border)',
-                      color: 'var(--text-muted)',
-                      background: userDone ? 'var(--complete)' : 'transparent'
+                      width: '18px', height: '18px', flexShrink: 0,
+                      background: done ? 'var(--complete)' : 'transparent',
+                      border: `1px solid ${done ? 'var(--complete)' : 'var(--border)'}`,
+                      cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '8px', color: done ? '#0b0806' : 'var(--text-dim)',
+                      boxShadow: done ? '0 0 6px var(--complete-glow)' : 'none',
+                      transition: 'all 0.15s',
                     }}
-                    title={userDone ? 'Mark incomplete' : 'Mark complete'}
+                    onMouseEnter={e => { if (!done) { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}}
+                    onMouseLeave={e => { if (!done) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-dim)'; }}}
                   >
-                    {userDone ? <Check className="w-4 h-4 text-white" /> : <Circle className="w-4 h-4" />}
+                    {done ? '✓' : '□'}
                   </button>
                 )}
               </div>
@@ -178,14 +209,10 @@ export default function PhaseModal({ phase, onClose }: PhaseModalProps) {
           })}
         </div>
 
-        {/* Footer */}
-        <div className="mt-6 pt-4 border-t flex justify-between items-center text-sm" style={{ borderColor: 'var(--border)' }}>
-          <span style={{ color: 'var(--text-muted)' }}>
-            Progress saved in browser.
-          </span>
-          <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-            Click lesson to view content
-          </span>
+        {/* footer */}
+        <div style={{ marginTop: '14px', display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'var(--text-dim)', fontFamily: 'var(--pixel-font)', letterSpacing: '0.3px' }}>
+          <span>PROGRESS SAVED IN BROWSER</span>
+          <span>CLICK LESSON TO READ ▶</span>
         </div>
       </div>
     </div>

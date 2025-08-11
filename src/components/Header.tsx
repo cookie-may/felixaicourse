@@ -1,138 +1,168 @@
 'use client';
 
 import Link from 'next/link';
-import { useTheme } from './ThemeProvider';
-import { Star, Menu, Moon, Sun } from 'lucide-react';
+import Image from 'next/image';
 import { useState } from 'react';
+import { Menu, X } from 'lucide-react';
+
+function XIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
+function GHIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+    </svg>
+  );
+}
+
+const NAV = [
+  { href: '/#phases',  label: 'Phases'  },
+  { href: '/catalog',  label: 'Catalog' },
+  { href: '/#roadmap', label: 'Roadmap' },
+  { href: '/glossary', label: 'Glossary'},
+];
 
 export default function Header() {
-  const { theme, toggleTheme } = useTheme();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const navLinkStyle = {
-    transition: 'color 0.2s',
-    color: 'var(--text-muted)',
-  } as React.CSSProperties;
+  const [open, setOpen] = useState(false);
 
   return (
-    <header
-      className="fixed top-0 left-0 right-0 z-50 border-b-2 border-dashed"
-      style={{
-        background: 'var(--header-bg)',
-        backdropFilter: 'blur(12px)',
-        borderColor: 'var(--border)'
-      }}
-    >
-      <style>
-        {`
-          .nav-link { transition: color 0.2s; }
-          .nav-link:hover { color: var(--accent) !important; }
-        `}
-      </style>
-      <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+    <header style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
+      height: '56px',
+      background: 'var(--header-bg)',
+      backdropFilter: 'blur(16px)',
+      borderBottom: '1px solid var(--border)',
+      boxShadow: '0 1px 0 var(--border-dim), 0 4px 24px rgba(0,0,0,0.4)',
+    }}>
+      <div style={{
+        maxWidth: '1280px', margin: '0 auto',
+        padding: '0 1.5rem', height: '100%',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 no-underline">
-          <span className="text-xl" style={{ color: 'var(--accent)' }}>●</span>
-          <span
-            className="font-heading font-bold text-xl"
-            style={{ color: 'var(--text)' }}
-          >
-            AI from Scratch
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+          <Image
+            src="/logo.png" alt="felix" width={30} height={30}
+            className="logo-glow"
+            style={{ borderRadius: '4px' }}
+          />
+          <span style={{
+            fontFamily: 'var(--pixel-font)',
+            fontSize: '9px',
+            color: 'var(--accent)',
+            letterSpacing: '0.5px',
+            textShadow: '0 0 10px var(--accent-glow), 0 0 28px rgba(232,108,44,0.3)',
+            lineHeight: 1,
+          }}>
+            FELIX<br />
+            <span style={{ color: 'var(--text-muted)', textShadow: 'none', fontSize: '7px' }}>forlearnai</span>
           </span>
         </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-6">
-          <Link href="/#phases" className="nav-link" style={navLinkStyle}>
-            Phases
-          </Link>
-          <Link href="/catalog" className="nav-link" style={navLinkStyle}>
-            Catalog
-          </Link>
-          <Link href="/#roadmap" className="nav-link" style={navLinkStyle}>
-            Roadmap
-          </Link>
-          <Link href="/glossary" className="nav-link" style={navLinkStyle}>
-            Glossary
-          </Link>
-          <Link href="/ai" className="nav-link" style={navLinkStyle}>
-            AI Tutor
-          </Link>
-
-          <a
-            href="https://github.com/rohitg00/ai-engineering-from-scratch"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border"
-            style={{
-              background: 'var(--bg-surface)',
-              borderColor: 'var(--border)',
-              color: 'var(--text)',
-              textDecoration: 'none'
+        {/* Desktop nav */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }} className="hidden md:flex">
+          {NAV.map(n => (
+            <Link key={n.href} href={n.href} style={{
+              fontSize: '12px', color: 'var(--text-muted)',
+              textDecoration: 'none', letterSpacing: '0.3px',
+              transition: 'color 0.15s, text-shadow 0.15s',
             }}
+              onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                e.currentTarget.style.color = 'var(--accent)';
+                e.currentTarget.style.textShadow = '0 0 8px var(--accent-glow)';
+              }}
+              onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                e.currentTarget.style.color = 'var(--text-muted)';
+                e.currentTarget.style.textShadow = 'none';
+              }}
+            >
+              {n.label}
+            </Link>
+          ))}
+
+          {/* separator */}
+          <div style={{ width: '1px', height: '14px', background: 'var(--border)' }} />
+
+          {/* X / Twitter */}
+          <a href="https://x.com/felixforlearnai" target="_blank" rel="noopener noreferrer"
+            title="Follow on X"
+            style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', transition: 'color 0.15s, filter 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.filter = 'drop-shadow(0 0 4px var(--accent-glow))'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.filter = 'none'; }}
           >
-            <Star className="w-4 h-4" style={{ fill: 'currentColor' }} />
-            <span>Star</span>
+            <XIcon />
           </a>
 
-          <button
-            onClick={toggleTheme}
-            className="w-10 h-10 rounded-full border-2 flex items-center justify-center cursor-pointer transition-all"
+          {/* GitHub */}
+          <a href="https://github.com/cookie-may/felixforlearnai" target="_blank" rel="noopener noreferrer"
             style={{
-              background: 'var(--bg-surface)',
-              borderColor: 'var(--border)',
-              color: 'var(--text)'
+              display: 'flex', alignItems: 'center', gap: '6px',
+              fontSize: '11px', fontWeight: '500', letterSpacing: '0.5px',
+              color: 'var(--text-muted)',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border)',
+              padding: '5px 12px',
+              textDecoration: 'none',
+              transition: 'border-color 0.15s, color 0.15s, box-shadow 0.15s',
             }}
-            aria-label="Toggle theme"
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = 'var(--accent)';
+              e.currentTarget.style.color = 'var(--accent)';
+              e.currentTarget.style.boxShadow = '0 0 8px var(--accent-glow)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.color = 'var(--text-muted)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
           >
-            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
+            <GHIcon /> STAR
+          </a>
         </nav>
 
-        {/* Mobile menu button */}
+        {/* Mobile toggle */}
         <button
-          className="md:hidden p-2"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          style={{ color: 'var(--text)' }}
+          className="md:hidden"
+          onClick={() => setOpen(!open)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: '4px' }}
         >
-          <Menu className="w-6 h-6" />
+          {open ? <X size={18} /> : <Menu size={18} />}
         </button>
       </div>
 
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div
-          className="md:hidden border-t-2"
-          style={{
-            background: 'var(--bg-surface)',
-            borderColor: 'var(--border)',
-            padding: '1rem'
-          }}
-        >
-          <nav className="flex flex-col gap-4">
-            <Link href="/#phases" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text)' }}>
-              Phases
-            </Link>
-            <Link href="/catalog" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text)' }}>
-              Catalog
-            </Link>
-            <Link href="/#roadmap" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text)' }}>
-              Roadmap
-            </Link>
-            <Link href="/glossary" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text)' }}>
-              Glossary
-            </Link>
-            <Link href="/ai" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--text)' }}>
-              AI Tutor
-            </Link>
-            <button
-              onClick={toggleTheme}
-              className="flex items-center gap-2"
-              style={{ color: 'var(--text)' }}
+      {/* Mobile menu */}
+      {open && (
+        <div style={{
+          background: 'var(--bg-surface)',
+          borderBottom: '1px solid var(--border)',
+          padding: '1rem 1.5rem',
+        }}>
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {NAV.map(n => (
+              <Link key={n.href} href={n.href} onClick={() => setOpen(false)}
+                style={{ fontSize: '12px', color: 'var(--text-muted)', textDecoration: 'none', letterSpacing: '0.3px' }}
+              >
+                {n.label}
+              </Link>
+            ))}
+            <div style={{ height: '1px', background: 'var(--border)', margin: '4px 0' }} />
+            <a href="https://x.com/felixforlearnai" target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: '11px', color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}
             >
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-            </button>
+              <XIcon /> @felixforlearnai
+            </a>
+            <a href="https://github.com/cookie-may/felixforlearnai" target="_blank" rel="noopener noreferrer"
+              style={{ fontSize: '11px', color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <GHIcon /> Star on GitHub
+            </a>
           </nav>
         </div>
       )}

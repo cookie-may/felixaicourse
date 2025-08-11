@@ -1,0 +1,207 @@
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.wrap{background:#0d0d0b;font-family:var(--font-sans);padding:40px 24px 48px}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:24px}
+.sec-title{font-size:15px;font-weight:500;color:#6b6456}
+.sec-sub{font-size:11px;color:#3a3830}
+.filter-row{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.filt{font-size:11px;padding:5px 12px;border-radius:20px;border:0.5px solid #252318;background:#0d0d0b;color:#4a4840;cursor:pointer;transition:all .15s}
+.filt:hover{border-color:#3a3020;color:#9a9080}
+.filt.on{background:#1a1510;border-color:#3d2e1e;color:#E86C2C}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;background:#181610;border:0.5px solid #181610;border-radius:12px;overflow:hidden}
+.card{background:#0d0d0b;padding:18px 16px 16px;cursor:pointer;transition:background .12s;border-bottom:2px solid transparent}
+.card:hover{background:#121108}
+.card.open{background:#111008;border-bottom-color:#E86C2C}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.phase-tag{font-size:10px;color:#E86C2C;font-weight:500;letter-spacing:0.6px}
+.card-arrow{font-size:11px;color:#2e2c24;transition:transform .2s}
+.card.open .card-arrow{transform:rotate(90deg);color:#E86C2C}
+.card-name{font-size:13px;font-weight:500;color:#c8c2b8;line-height:1.35;margin-bottom:12px}
+.prog-bg{height:2px;background:#1e1c14;border-radius:1px;margin-bottom:8px}
+.prog-fill{height:2px;background:#E86C2C;border-radius:1px;transition:width .4s}
+.card-meta{display:flex;justify-content:space-between;align-items:center}
+.lessons-count{font-size:11px;color:#3a3830}
+.langs{display:flex;gap:3px}
+.lp{font-size:9px;padding:2px 6px;border-radius:3px;border:0.5px solid}
+.lp.py{background:#0e1408;border-color:#243014;color:#639922}
+.lp.ts{background:#081018;border-color:#102030;color:#378ADD}
+.lp.rs{background:#140c06;border-color:#301808;color:#D85A30}
+.lp.jl{background:#061210;border-color:#0e2820;color:#1D9E75}
+.expand{overflow:hidden;max-height:0;transition:max-height .3s ease}
+.card.open .expand{max-height:300px}
+.expand-inner{border-top:0.5px solid #1e1c14;margin-top:14px;padding-top:14px}
+.lesson-list{display:flex;flex-direction:column;gap:1px}
+.lesson{display:flex;align-items:center;gap:8px;padding:5px 0}
+.lesson-dot{width:5px;height:5px;border-radius:50%;background:#252318;flex-shrink:0}
+.lesson.done .lesson-dot{background:#E86C2C}
+.lesson-name{font-size:11px;color:#4a4840;line-height:1.3}
+.lesson.done .lesson-name{color:#7a7468}
+.lesson-type{font-size:9px;padding:1px 5px;border-radius:3px;margin-left:auto;flex-shrink:0}
+.lesson-type.build{background:#1a1510;color:#E86C2C;border:0.5px solid #3d2e1e}
+.lesson-type.learn{background:#0e1418;color:#378ADD;border:0.5px solid #1a2a3a}
+.expand-footer{margin-top:10px;display:flex;justify-content:space-between;align-items:center}
+.all-link{font-size:11px;color:#3a3830;text-decoration:none;cursor:pointer}
+.all-link:hover{color:#E86C2C}
+.status-badge{font-size:9px;padding:2px 8px;border-radius:10px}
+.status-badge.ready{background:#0e180e;color:#639922;border:0.5px solid #1a3018}
+.status-badge.wip{background:#181410;color:#BA7517;border:0.5px solid #302010}
+.status-badge.soon{background:#141214;color:#534AB7;border:0.5px solid #2a2050}
+.total-bar{display:flex;align-items:center;gap:16px;margin-top:24px;padding:14px 16px;background:#0a0a08;border:0.5px solid #181610;border-radius:8px}
+.total-item{text-align:center}
+.total-n{font-size:16px;font-weight:500;color:#e8e2d8}
+.total-l{font-size:10px;color:#3a3830;margin-top:2px}
+.total-sep{width:0.5px;height:28px;background:#1e1c14}
+.overall-bg{flex:1;height:3px;background:#181610;border-radius:2px}
+.overall-fill{height:3px;background:#E86C2C;border-radius:2px;width:18%}
+.overall-label{font-size:10px;color:#3a3830;white-space:nowrap}
+</style>
+
+<div class="wrap">
+  <h2 class="sr-only">Phase cards for AI Engineering from Scratch curriculum</h2>
+
+  <div class="sec-head">
+    <span class="sec-title">The 20 phases</span>
+    <span class="sec-sub">Click any card to preview lessons</span>
+  </div>
+
+  <div class="filter-row">
+    <div class="filt on" data-f="all">All phases</div>
+    <div class="filt" data-f="foundations">Foundations</div>
+    <div class="filt" data-f="models">Models</div>
+    <div class="filt" data-f="agents">Agents</div>
+    <div class="filt" data-f="production">Production</div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="total-bar">
+    <div class="total-item"><div class="total-n">260+</div><div class="total-l">Lessons</div></div>
+    <div class="total-sep"></div>
+    <div class="total-item"><div class="total-n">20</div><div class="total-l">Phases</div></div>
+    <div class="total-sep"></div>
+    <div class="total-item"><div class="total-n">~290h</div><div class="total-l">Total</div></div>
+    <div class="total-sep"></div>
+    <div class="overall-bg"><div class="overall-fill"></div></div>
+    <div class="overall-label">18% complete</div>
+  </div>
+</div>
+
+<script>
+const phases = [
+  {num:"00",name:"Setup & tooling",lessons:12,progress:100,langs:["py","ts"],status:"ready",group:"foundations",preview:[
+    {n:"Dev environment",t:"build",done:true},{n:"Git & collaboration",t:"learn",done:true},{n:"GPU setup & cloud",t:"build",done:true},{n:"Docker for AI",t:"build",done:true},{n:"Debugging & profiling",t:"build",done:false}
+  ]},
+  {num:"01",name:"Math foundations",lessons:22,progress:85,langs:["py","jl"],status:"ready",group:"foundations",preview:[
+    {n:"Linear algebra intuition",t:"learn",done:true},{n:"Vectors, matrices & ops",t:"build",done:true},{n:"Calculus for ML",t:"learn",done:true},{n:"Gradient descent family",t:"build",done:true},{n:"Stochastic processes",t:"learn",done:false}
+  ]},
+  {num:"02",name:"ML fundamentals",lessons:18,progress:70,langs:["py"],status:"ready",group:"foundations",preview:[
+    {n:"Linear regression",t:"build",done:true},{n:"Decision trees",t:"build",done:true},{n:"Ensemble methods",t:"build",done:false},{n:"Time series",t:"build",done:false},{n:"Anomaly detection",t:"build",done:false}
+  ]},
+  {num:"03",name:"Deep learning core",lessons:13,progress:40,langs:["py"],status:"ready",group:"models",preview:[
+    {n:"The perceptron",t:"build",done:true},{n:"Backpropagation",t:"build",done:false},{n:"Activation functions",t:"learn",done:false},{n:"Build your own framework",t:"build",done:false},{n:"Debugging neural nets",t:"learn",done:false}
+  ]},
+  {num:"04",name:"Computer vision",lessons:16,progress:20,langs:["py","rs"],status:"wip",group:"models",preview:[
+    {n:"Convolutions from scratch",t:"build",done:true},{n:"CNNs: LeNet to ResNet",t:"build",done:false},{n:"Object detection: YOLO",t:"build",done:false},{n:"Diffusion models",t:"build",done:false},{n:"Vision transformers",t:"build",done:false}
+  ]},
+  {num:"05",name:"NLP foundations",lessons:18,progress:10,langs:["py"],status:"wip",group:"models",preview:[
+    {n:"Tokenization & stemming",t:"build",done:true},{n:"Word2Vec from scratch",t:"build",done:false},{n:"Attention mechanism",t:"build",done:false},{n:"Machine translation",t:"build",done:false},{n:"Multilingual NLP",t:"build",done:false}
+  ]},
+  {num:"06",name:"Speech & audio",lessons:12,progress:0,langs:["py","rs"],status:"soon",group:"models",preview:[
+    {n:"Waveforms & FFT",t:"learn",done:false},{n:"ASR from scratch",t:"build",done:false},{n:"Whisper fine-tuning",t:"build",done:false},{n:"Voice cloning",t:"build",done:false},{n:"Voice assistant pipeline",t:"build",done:false}
+  ]},
+  {num:"07",name:"Transformers deep dive",lessons:14,progress:15,langs:["py","rs"],status:"wip",group:"models",preview:[
+    {n:"Self-attention from scratch",t:"build",done:true},{n:"Multi-head attention",t:"build",done:false},{n:"BERT: masked LM",t:"build",done:false},{n:"KV cache & flash attention",t:"build",done:false},{n:"Build a transformer",t:"build",done:false}
+  ]},
+  {num:"08",name:"Generative AI",lessons:14,progress:0,langs:["py"],status:"soon",group:"models",preview:[
+    {n:"Autoencoders & VAE",t:"build",done:false},{n:"GANs from scratch",t:"build",done:false},{n:"Diffusion: DDPM",t:"build",done:false},{n:"ControlNet & LoRA",t:"build",done:false},{n:"Flow matching",t:"build",done:false}
+  ]},
+  {num:"09",name:"Reinforcement learning",lessons:12,progress:0,langs:["py"],status:"soon",group:"models",preview:[
+    {n:"MDPs & rewards",t:"learn",done:false},{n:"Deep Q-Networks",t:"build",done:false},{n:"PPO",t:"build",done:false},{n:"Reward modeling & RLHF",t:"build",done:false},{n:"Multi-agent RL",t:"build",done:false}
+  ]},
+  {num:"10",name:"LLMs from scratch",lessons:14,progress:25,langs:["py","rs"],status:"wip",group:"models",preview:[
+    {n:"BPE tokenizer",t:"build",done:true},{n:"Pre-train a mini GPT",t:"build",done:true},{n:"SFT: instruction tuning",t:"build",done:false},{n:"DPO optimization",t:"build",done:false},{n:"Quantization: GPTQ/AWQ",t:"build",done:false}
+  ]},
+  {num:"11",name:"LLM engineering",lessons:13,progress:30,langs:["py","ts"],status:"wip",group:"models",preview:[
+    {n:"Prompt engineering",t:"build",done:true},{n:"RAG from scratch",t:"build",done:true},{n:"Advanced RAG: reranking",t:"build",done:false},{n:"Guardrails & safety",t:"build",done:false},{n:"Production LLM app",t:"build",done:false}
+  ]},
+  {num:"12",name:"Multimodal AI",lessons:11,progress:0,langs:["py","ts"],status:"soon",group:"models",preview:[
+    {n:"CLIP: vision + language",t:"build",done:false},{n:"Vision-language models",t:"build",done:false},{n:"Multimodal RAG",t:"build",done:false},{n:"Text-to-video pipelines",t:"build",done:false},{n:"Any-to-any models",t:"learn",done:false}
+  ]},
+  {num:"13",name:"Tools & protocols",lessons:10,progress:20,langs:["ts","py"],status:"wip",group:"agents",preview:[
+    {n:"Function calling deep dive",t:"build",done:true},{n:"MCP: model context protocol",t:"learn",done:true},{n:"Building MCP servers",t:"build",done:false},{n:"Browser automation",t:"build",done:false},{n:"Tool ecosystem",t:"build",done:false}
+  ]},
+  {num:"14",name:"Agent engineering",lessons:15,progress:10,langs:["ts","py"],status:"wip",group:"agents",preview:[
+    {n:"The agent loop",t:"build",done:true},{n:"Planning: DAGs",t:"build",done:false},{n:"Memory: short & long term",t:"build",done:false},{n:"Error recovery",t:"build",done:false},{n:"Build a complete agent",t:"build",done:false}
+  ]},
+  {num:"15",name:"Autonomous systems",lessons:11,progress:0,langs:["ts"],status:"soon",group:"agents",preview:[
+    {n:"Autonomous loops",t:"build",done:false},{n:"Self-healing agents",t:"build",done:false},{n:"Human-in-the-loop",t:"build",done:false},{n:"Cost-aware systems",t:"build",done:false},{n:"Autonomous coding agent",t:"build",done:false}
+  ]},
+  {num:"16",name:"Multi-agent & swarms",lessons:14,progress:5,langs:["ts","rs"],status:"wip",group:"agents",preview:[
+    {n:"Why multi-agent",t:"learn",done:true},{n:"Agent teams & delegation",t:"build",done:false},{n:"Consensus algorithms",t:"build",done:false},{n:"Swarm intelligence",t:"build",done:false},{n:"Autonomous swarm",t:"build",done:false}
+  ]},
+  {num:"17",name:"Infrastructure & prod",lessons:11,progress:0,langs:["py","ts","rs"],status:"soon",group:"production",preview:[
+    {n:"Model serving",t:"build",done:false},{n:"Kubernetes for AI",t:"build",done:false},{n:"Edge: ONNX & WASM",t:"build",done:false},{n:"CI/CD for ML",t:"build",done:false},{n:"Production AI platform",t:"build",done:false}
+  ]},
+  {num:"18",name:"Ethics & safety",lessons:6,progress:0,langs:["py"],status:"soon",group:"production",preview:[
+    {n:"Bias & fairness",t:"learn",done:false},{n:"Red teaming",t:"build",done:false},{n:"Differential privacy",t:"build",done:false},{n:"Interpretability: SHAP",t:"build",done:false},{n:"Responsible AI",t:"learn",done:false}
+  ]},
+  {num:"19",name:"Capstone projects",lessons:5,progress:0,langs:["py","ts","rs"],status:"soon",group:"production",preview:[
+    {n:"Mini GPT & chat UI",t:"build",done:false},{n:"Multimodal RAG system",t:"build",done:false},{n:"Autonomous research agent",t:"build",done:false},{n:"Multi-agent dev team",t:"build",done:false},{n:"Production AI platform",t:"build",done:false}
+  ]}
+];
+
+const statusLabel={ready:"Ready",wip:"In progress",soon:"Coming soon"};
+let activeFilter="all";
+let openCard=null;
+
+function render(){
+  const grid=document.getElementById("grid");
+  const filtered=activeFilter==="all"?phases:phases.filter(p=>p.group===activeFilter);
+  grid.innerHTML="";
+  filtered.forEach((p,i)=>{
+    const card=document.createElement("div");
+    card.className="card";
+    card.dataset.idx=phases.indexOf(p);
+    const langPills=p.langs.map(l=>`<span class="lp ${l}">${l}</span>`).join("");
+    const lessonItems=p.preview.map(l=>`<div class="lesson${l.done?" done":""}"><div class="lesson-dot"></div><div class="lesson-name">${l.n}</div><span class="lesson-type ${l.t}">${l.t}</span></div>`).join("");
+    card.innerHTML=`
+      <div class="card-top">
+        <span class="phase-tag">PHASE ${p.num}</span>
+        <span class="card-arrow">›</span>
+      </div>
+      <div class="card-name">${p.name}</div>
+      <div class="prog-bg"><div class="prog-fill" style="width:${p.progress}%"></div></div>
+      <div class="card-meta">
+        <span class="lessons-count">${p.lessons} lessons</span>
+        <div class="langs">${langPills}</div>
+      </div>
+      <div class="expand">
+        <div class="expand-inner">
+          <div class="lesson-list">${lessonItems}</div>
+          <div class="expand-footer">
+            <span class="all-link">View all ${p.lessons} lessons →</span>
+            <span class="status-badge ${p.status}">${statusLabel[p.status]}</span>
+          </div>
+        </div>
+      </div>`;
+    card.addEventListener("click",()=>{
+      const idx=parseInt(card.dataset.idx);
+      if(openCard===card){card.classList.remove("open");openCard=null;}
+      else{if(openCard)openCard.classList.remove("open");card.classList.add("open");openCard=card;}
+    });
+    grid.appendChild(card);
+  });
+}
+
+document.querySelectorAll(".filt").forEach(f=>{
+  f.addEventListener("click",()=>{
+    document.querySelectorAll(".filt").forEach(x=>x.classList.remove("on"));
+    f.classList.add("on");
+    activeFilter=f.dataset.f;
+    openCard=null;
+    render();
+  });
+});
+
+render();
+</script>

@@ -6,8 +6,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'SLAFAI - AI Engineering from Scratch',
-  description: '260+ lessons across 20 phases. Build neural networks, transformers, and LLMs from first principles.',
+  title: 'felixforlearnai — AI Engineering from Scratch',
+  description: '260+ lessons across 20 phases. Build neural networks, transformers, and LLMs from first principles. Python, TypeScript, Rust, Julia.',
 };
 
 export default function RootLayout({
@@ -16,12 +16,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen flex flex-col">
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
+      <body style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <ThemeProvider>
           <ProgressProvider>
             <Header />
-            <main className="flex-1 pt-16">
+            <main style={{ flex: 1 }}>
               {children}
             </main>
             <Footer />

@@ -2,263 +2,339 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ExternalLink, Check, Circle } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useProgress } from '@/components/ProgressProvider';
+import { PHASES } from '@/data/phases';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-interface LessonViewerProps {
-  phaseSlug: string;
-  lessonSlug: string;
+interface Props { phaseSlug: string; lessonSlug: string; }
+
+function GHIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+    </svg>
+  );
 }
 
-export default function LessonViewer({ phaseSlug, lessonSlug }: LessonViewerProps) {
+/* find phase + lesson meta from PHASES data */
+function findMeta(phaseSlug: string, lessonSlug: string) {
+  const lessonPath = `phases/${phaseSlug}/${lessonSlug}`;
+  for (const phase of PHASES) {
+    const lesson = phase.lessons.find(l => l.path === lessonPath);
+    if (lesson) return { phase, lesson };
+  }
+  return null;
+}
+
+/* build flat list of all lessons that have a path, for prev/next nav */
+function flatLessons() {
+  const list: { path: string; phaseName: string; lessonName: string; phaseSlug: string; lessonSlug: string }[] = [];
+  PHASES.forEach(phase => {
+    phase.lessons.forEach(lesson => {
+      if (lesson.path) {
+        const parts = lesson.path.split('/');
+        if (parts.length === 3) {
+          list.push({
+            path: lesson.path,
+            phaseName: phase.name,
+            lessonName: lesson.name,
+            phaseSlug: parts[1],
+            lessonSlug: parts[2],
+          });
+        }
+      }
+    });
+  });
+  return list;
+}
+
+export default function LessonViewer({ phaseSlug, lessonSlug }: Props) {
   const router = useRouter();
   const { isComplete, markComplete, markIncomplete } = useProgress();
-  const [content, setContent] = useState<string>('');
+
+  const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lessonTitle, setLessonTitle] = useState('');
-
-  useEffect(() => {
-    const fetchLessonContent = async () => {
-      setLoading(true);
-      setError(null);
-
-      const lessonPath = `phases/${phaseSlug}/${lessonSlug}`;
-      const rawUrl = `https://raw.githubusercontent.com/rohitg00/ai-engineering-from-scratch/main/${lessonPath}/docs/en.md`;
-
-      try {
-        const response = await fetch(rawUrl);
-        if (!response.ok) {
-          throw new Error('Lesson content not found');
-        }
-        const text = await response.text();
-        setContent(text);
-
-        const titleMatch = text.match(/^#\s+(.+)$/m);
-        if (titleMatch) {
-          setLessonTitle(titleMatch[1]);
-        } else {
-          setLessonTitle(lessonSlug.replace(/-/g, ' '));
-        }
-      } catch (err) {
-        setError('Could not load lesson content. Please try again later.');
-        console.error('Error fetching lesson:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (phaseSlug && lessonSlug) {
-      fetchLessonContent();
-    }
-  }, [phaseSlug, lessonSlug]);
+  const [error, setError]   = useState(false);
 
   const lessonPath = `phases/${phaseSlug}/${lessonSlug}`;
-  const userDone = isComplete(lessonPath);
-  const githubUrl = `https://github.com/rohitg00/ai-engineering-from-scratch/tree/main/${lessonPath}`;
+  const done       = isComplete(lessonPath);
+  const meta       = findMeta(phaseSlug, lessonSlug);
+  const all        = flatLessons();
+  const idx        = all.findIndex(l => l.path === lessonPath);
+  const prev       = idx > 0 ? all[idx - 1] : null;
+  const next       = idx < all.length - 1 ? all[idx + 1] : null;
 
-  const toggleComplete = () => {
-    if (userDone) {
-      markIncomplete(lessonPath);
-    } else {
-      markComplete(lessonPath);
-    }
+  /* fetch from public/phases — served as static asset */
+  useEffect(() => {
+    setLoading(true);
+    setError(false);
+    setContent('');
+
+    fetch(`/phases/${phaseSlug}/${lessonSlug}/docs/en.md`)
+      .then(r => {
+        if (!r.ok) throw new Error('not found');
+        return r.text();
+      })
+      .then(text => { setContent(text); setLoading(false); })
+      .catch(() => { setError(true); setLoading(false); });
+  }, [phaseSlug, lessonSlug]);
+
+  const ghUrl = `https://github.com/rohitg00/ai-engineering-from-scratch/tree/main/${lessonPath}`;
+
+  /* shared icon button style */
+  const iconBtn: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: '5px',
+    fontSize: '10px', fontFamily: 'var(--pixel-font)', letterSpacing: '0.3px',
+    color: 'var(--text-muted)',
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border)',
+    padding: '5px 10px',
+    cursor: 'pointer', textDecoration: 'none',
+    transition: 'border-color 0.15s, color 0.15s, box-shadow 0.15s',
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
-      {/* Header */}
-      <div
-        className="sticky top-16 z-40 border-b px-4 py-3"
-        style={{ background: 'var(--header-bg)', borderColor: 'var(--border)' }}
-      >
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors hover:bg-[var(--bg-surface)]"
-            style={{ color: 'var(--text-muted)' }}
+    <div style={{ background: 'var(--bg)', minHeight: '100vh', paddingTop: '56px' }}>
+
+      {/* ── sub-header ─────────────────────────────────── */}
+      <div style={{
+        position: 'sticky', top: '56px', zIndex: 40,
+        background: 'var(--header-bg)', backdropFilter: 'blur(14px)',
+        borderBottom: '1px solid var(--border)',
+        padding: '0 1.5rem', height: '46px',
+        display: 'flex', alignItems: 'center',
+      }}>
+        <div style={{
+          maxWidth: '860px', width: '100%', margin: '0 auto',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
+        }}>
+          {/* back */}
+          <button onClick={() => router.back()} style={{ ...iconBtn, flexShrink: 0 }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 6px var(--accent-glow)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.boxShadow = 'none'; }}
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Back</span>
+            <ArrowLeft size={11} /> BACK
           </button>
 
-          <div className="flex items-center gap-3">
-            <a
-              href={githubUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors hover:border-[var(--accent)]"
-              style={{
-                borderColor: 'var(--border)',
-                color: 'var(--text-muted)'
-              }}
+          {/* breadcrumb */}
+          {meta && (
+            <div style={{ flex: 1, textAlign: 'center', overflow: 'hidden' }}>
+              <span style={{ fontSize: '9px', fontFamily: 'var(--pixel-font)', color: 'var(--accent)', textShadow: '0 0 6px var(--accent-glow)', letterSpacing: '0.3px' }}>
+                PH{String(meta.phase.id).padStart(2,'0')}
+              </span>
+              <span style={{ fontSize: '9px', color: 'var(--text-dim)', margin: '0 6px' }}>›</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {meta.lesson.name}
+              </span>
+            </div>
+          )}
+
+          {/* actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            <a href={ghUrl} target="_blank" rel="noopener noreferrer"
+              style={iconBtn}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-active)'; (e.currentTarget as HTMLElement).style.color = 'var(--accent)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
             >
-              <ExternalLink className="w-4 h-4" />
-              <span className="hidden sm:inline">GitHub</span>
+              <GHIcon /> SRC
             </a>
 
             <button
-              onClick={toggleComplete}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors"
+              onClick={() => done ? markIncomplete(lessonPath) : markComplete(lessonPath)}
               style={{
-                borderColor: userDone ? 'var(--complete)' : 'var(--border)',
-                color: userDone ? 'var(--complete)' : 'var(--text-muted)',
-                background: userDone ? 'rgba(90, 184, 143, 0.1)' : 'transparent'
+                ...iconBtn,
+                borderColor: done ? 'var(--complete)' : 'var(--border)',
+                color: done ? 'var(--complete)' : 'var(--text-muted)',
+                background: done ? 'var(--complete-dim)' : 'var(--bg-card)',
+                boxShadow: done ? '0 0 8px var(--complete-glow)' : 'none',
+              }}
+              onMouseEnter={e => {
+                if (!done) {
+                  e.currentTarget.style.borderColor = 'var(--accent)';
+                  e.currentTarget.style.color = 'var(--accent)';
+                  e.currentTarget.style.boxShadow = '0 0 6px var(--accent-glow)';
+                }
+              }}
+              onMouseLeave={e => {
+                if (!done) {
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.color = 'var(--text-muted)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }
               }}
             >
-              {userDone ? <Check className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
-              <span className="hidden sm:inline">{userDone ? 'Completed' : 'Mark Complete'}</span>
+              {done ? '✓ DONE' : '□ MARK DONE'}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div
-              className="w-8 h-8 border-4 rounded-full animate-spin"
-              style={{
-                borderColor: 'var(--border)',
-                borderTopColor: 'var(--accent)'
-              }}
-            />
+      {/* ── content ────────────────────────────────────── */}
+      <div style={{ maxWidth: '860px', margin: '0 auto', padding: '36px 1.5rem 80px' }}>
+
+        {loading && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '60px 0' }}>
+            <div style={{
+              fontFamily: 'var(--pixel-font)', fontSize: '10px', color: 'var(--accent)',
+              textShadow: '0 0 10px var(--accent-glow)',
+              animation: 'fadeUp 0.5s ease infinite alternate',
+            }}>
+              LOADING...
+            </div>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {[0,1,2,3,4,5,6,7].map(i => (
+                <div key={i} style={{
+                  width: '6px', height: '6px',
+                  background: 'var(--accent)',
+                  opacity: (i % 3 === 0) ? 1 : 0.3,
+                  boxShadow: '0 0 4px var(--accent-glow)',
+                }} />
+              ))}
+            </div>
           </div>
-        ) : error ? (
-          <div
-            className="p-8 rounded-2xl border-2 text-center"
-            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
-          >
-            <div className="text-4xl mb-4">📚</div>
-            <h2 className="font-heading text-2xl mb-2" style={{ color: 'var(--text)' }}>
-              Lesson Not Available
-            </h2>
-            <p style={{ color: 'var(--text-muted)' }}>{error}</p>
-            <a
-              href={githubUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block mt-4 px-4 py-2 rounded-lg border-2"
-              style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
-            >
-              View on GitHub
+        )}
+
+        {!loading && error && (
+          <div style={{
+            background: 'var(--bg-card)', border: '1px solid var(--border)',
+            borderTop: '2px solid var(--accent)',
+            padding: '40px 32px', textAlign: 'center',
+          }}>
+            <div style={{ fontFamily: 'var(--pixel-font)', fontSize: '10px', color: 'var(--accent)', textShadow: '0 0 10px var(--accent-glow)', marginBottom: '12px' }}>
+              CONTENT NOT FOUND
+            </div>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+              This lesson&apos;s markdown file could not be loaded.<br />
+              Make sure <code style={{ fontFamily: 'var(--mono-font)', color: 'var(--accent)' }}>
+                public/phases/{phaseSlug}/{lessonSlug}/docs/en.md
+              </code> exists.
+            </p>
+            <a href={ghUrl} target="_blank" rel="noopener noreferrer"
+              className="btn-ghost" style={{ fontSize: '11px' }}>
+              VIEW ON GITHUB ↗
             </a>
           </div>
-        ) : (
-          <article
-            className="prose prose-invert max-w-none lesson-content"
-            style={{ color: 'var(--text)' }}
-          >
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                h1: ({ children }) => (
-                  <h1 className="font-heading text-4xl font-bold mb-6" style={{ color: 'var(--accent)' }}>
-                    {children}
-                  </h1>
-                ),
-                h2: ({ children }) => (
-                  <h2 className="font-heading text-2xl font-bold mt-8 mb-4" style={{ color: 'var(--text)' }}>
-                    {children}
-                  </h2>
-                ),
-                h3: ({ children }) => (
-                  <h3 className="font-heading text-xl font-semibold mt-6 mb-3" style={{ color: 'var(--text)' }}>
-                    {children}
-                  </h3>
-                ),
-                p: ({ children }) => (
-                  <p className="mb-4 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                    {children}
-                  </p>
-                ),
-                a: ({ href, children }) => (
-                  <a
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline underline-offset-2 hover:text-[var(--accent)]"
-                    style={{ color: 'var(--secondary)' }}
-                  >
-                    {children}
-                  </a>
-                ),
-                code: ({ children, className }) => {
-                  const isInline = !className;
-                  if (isInline) {
-                    return (
-                      <code
-                        className="px-1.5 py-0.5 rounded text-sm font-mono"
-                        style={{
-                          background: 'var(--code-bg)',
-                          color: 'var(--accent)',
-                          border: '1px solid var(--border)'
-                        }}
-                      >
-                        {children}
-                      </code>
-                    );
-                  }
-                  return (
-                    <code className={`${className} block p-4 rounded-lg font-mono text-sm overflow-x-auto my-4`} style={{ background: 'var(--code-bg)', border: '1px solid var(--border)' }}>
-                      {children}
-                    </code>
-                  );
-                },
-                pre: ({ children }) => (
-                  <pre className="p-4 rounded-lg overflow-x-auto my-4 font-mono text-sm" style={{ background: 'var(--code-bg)', border: '1px solid var(--border)' }}>
-                    {children}
-                  </pre>
-                ),
-                ul: ({ children }) => (
-                  <ul className="list-disc list-inside mb-4 space-y-2" style={{ color: 'var(--text-muted)' }}>
-                    {children}
-                  </ul>
-                ),
-                ol: ({ children }) => (
-                  <ol className="list-decimal list-inside mb-4 space-y-2" style={{ color: 'var(--text-muted)' }}>
-                    {children}
-                  </ol>
-                ),
-                li: ({ children }) => (
-                  <li className="leading-relaxed">{children}</li>
-                ),
-                blockquote: ({ children }) => (
-                  <blockquote
-                    className="border-l-4 pl-4 my-4 italic"
-                    style={{ borderColor: 'var(--accent)', color: 'var(--text-muted)' }}
-                  >
-                    {children}
-                  </blockquote>
-                ),
-                table: ({ children }) => (
-                  <div className="overflow-x-auto my-4">
-                    <table className="w-full border-collapse rounded-lg overflow-hidden" style={{ border: '1px solid var(--border)' }}>
-                      {children}
-                    </table>
+        )}
+
+        {!loading && !error && content && (
+          <>
+            {/* lesson metadata bar */}
+            {meta && (
+              <div style={{
+                display: 'flex', gap: '20px', flexWrap: 'wrap',
+                marginBottom: '28px', paddingBottom: '16px',
+                borderBottom: '1px solid var(--border)',
+              }}>
+                {[
+                  { label: 'PHASE',  val: `${String(meta.phase.id).padStart(2,'0')} · ${meta.phase.name}` },
+                  { label: 'TYPE',   val: meta.lesson.type  },
+                  { label: 'LANG',   val: meta.lesson.lang  },
+                ].map(item => (
+                  <div key={item.label}>
+                    <div style={{ fontSize: '8px', fontFamily: 'var(--pixel-font)', color: 'var(--text-dim)', letterSpacing: '0.5px', marginBottom: '3px' }}>
+                      {item.label}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--mono-font)' }}>
+                      {item.val}
+                    </div>
                   </div>
-                ),
-                th: ({ children }) => (
-                  <th className="px-4 py-2 text-left font-semibold" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
-                    {children}
-                  </th>
-                ),
-                td: ({ children }) => (
-                  <td className="px-4 py-2" style={{ borderBottom: '1px solid var(--border)' }}>
-                    {children}
-                  </td>
-                ),
-                hr: () => (
-                  <hr className="my-8 border-dashed" style={{ borderColor: 'var(--border)' }} />
-                ),
-              }}
-            >
-              {content}
-            </ReactMarkdown>
-          </article>
+                ))}
+
+                {/* done badge */}
+                {done && (
+                  <div style={{ marginLeft: 'auto' }}>
+                    <span style={{
+                      fontFamily: 'var(--pixel-font)', fontSize: '8px',
+                      color: 'var(--complete)', letterSpacing: '0.5px',
+                      background: 'var(--complete-dim)',
+                      border: '1px solid rgba(114,184,48,0.3)',
+                      padding: '4px 10px',
+                      boxShadow: '0 0 8px var(--complete-glow)',
+                    }}>
+                      ✓ COMPLETE
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* rendered markdown */}
+            <div className="lesson-prose">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {content}
+              </ReactMarkdown>
+            </div>
+
+            {/* mark-complete CTA at bottom */}
+            {!done && (
+              <div style={{
+                marginTop: '40px',
+                padding: '20px 24px',
+                background: 'var(--accent-dim)',
+                border: '1px solid var(--accent-border)',
+                borderLeft: '3px solid var(--accent)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap',
+              }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Finished reading? Mark this lesson complete to track your progress.
+                </span>
+                <button onClick={() => markComplete(lessonPath)} className="btn-primary" style={{ fontSize: '11px', padding: '7px 18px' }}>
+                  ✓ MARK COMPLETE
+                </button>
+              </div>
+            )}
+
+            {/* prev / next */}
+            <div style={{
+              marginTop: '40px', paddingTop: '24px',
+              borderTop: '1px solid var(--border)',
+              display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px',
+            }}>
+              {prev ? (
+                <button onClick={() => router.push(`/lessons/${prev.phaseSlug}/${prev.lessonSlug}`)}
+                  style={{
+                    background: 'var(--bg-card)', border: '1px solid var(--border)',
+                    padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
+                    transition: 'border-color 0.15s, box-shadow 0.15s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 8px var(--accent-glow)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  <div style={{ fontSize: '8px', fontFamily: 'var(--pixel-font)', color: 'var(--text-dim)', marginBottom: '5px', letterSpacing: '0.3px' }}>◀ PREVIOUS</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{prev.lessonName}</div>
+                </button>
+              ) : <div />}
+
+              {next ? (
+                <button onClick={() => router.push(`/lessons/${next.phaseSlug}/${next.lessonSlug}`)}
+                  style={{
+                    background: 'var(--bg-card)', border: '1px solid var(--border)',
+                    padding: '14px 16px', cursor: 'pointer', textAlign: 'right',
+                    transition: 'border-color 0.15s, box-shadow 0.15s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 8px var(--accent-glow)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  <div style={{ fontSize: '8px', fontFamily: 'var(--pixel-font)', color: 'var(--text-dim)', marginBottom: '5px', letterSpacing: '0.3px' }}>NEXT ▶</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{next.lessonName}</div>
+                </button>
+              ) : (
+                <button
+                  onClick={() => { markComplete(lessonPath); router.push('/'); }}
+                  style={{
+                    background: 'var(--accent-dim)', border: '1px solid var(--accent-border)',
+                    padding: '14px 16px', cursor: 'pointer', textAlign: 'right',
+                    boxShadow: '0 0 10px var(--accent-glow)',
+                  }}
+                >
+                  <div style={{ fontSize: '8px', fontFamily: 'var(--pixel-font)', color: 'var(--accent)', marginBottom: '5px', letterSpacing: '0.3px', textShadow: '0 0 6px var(--accent-glow)' }}>🎉 LAST LESSON</div>
+                  <div style={{ fontSize: '12px', color: 'var(--accent)' }}>Finish & go home</div>
+                </button>
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>
