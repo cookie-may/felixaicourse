@@ -13,7 +13,7 @@ interface ProgressContextType {
 
 const ProgressContext = createContext<ProgressContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'slafai-progress';
+const STORAGE_KEY = 'felix-progress';
 
 export function ProgressProvider({ children }: { children: ReactNode }) {
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());

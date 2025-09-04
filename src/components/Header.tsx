@@ -34,7 +34,7 @@ export default function Header() {
   return (
     <header style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
-      height: '56px',
+      height: '68px',
       background: 'var(--header-bg)',
       backdropFilter: 'blur(16px)',
       borderBottom: '1px solid var(--border)',
@@ -49,20 +49,20 @@ export default function Header() {
         {/* Logo */}
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
           <Image
-            src="/logo.png" alt="felix" width={30} height={30}
+            src="/logo.png" alt="felix" width={38} height={38}
             className="logo-glow"
             style={{ borderRadius: '4px' }}
           />
           <span style={{
             fontFamily: 'var(--pixel-font)',
-            fontSize: '9px',
+            fontSize: '16px',
             color: 'var(--accent)',
             letterSpacing: '0.5px',
             textShadow: '0 0 10px var(--accent-glow), 0 0 28px rgba(232,108,44,0.3)',
             lineHeight: 1,
           }}>
             FELIX<br />
-            <span style={{ color: 'var(--text-muted)', textShadow: 'none', fontSize: '7px' }}>forlearnai</span>
+            <span style={{ color: 'var(--text-muted)', textShadow: 'none', fontSize: '12px' }}>forlearnai</span>
           </span>
         </Link>
 
@@ -70,7 +70,7 @@ export default function Header() {
         <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }} className="hidden md:flex">
           {NAV.map(n => (
             <Link key={n.href} href={n.href} style={{
-              fontSize: '12px', color: 'var(--text-muted)',
+              fontSize: '14px', color: 'var(--text-muted)',
               textDecoration: 'none', letterSpacing: '0.3px',
               transition: 'color 0.15s, text-shadow 0.15s',
             }}

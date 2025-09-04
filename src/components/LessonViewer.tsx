@@ -1,14 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useProgress } from '@/components/ProgressProvider';
 import { PHASES } from '@/data/phases';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import type { Components } from 'react-markdown';
 
-interface Props { phaseSlug: string; lessonSlug: string; }
+const MermaidBlock = dynamic(() => import('@/components/MermaidBlock'), { ssr: false });
+
+interface Props { phaseSlug: string; lessonSlug: string; initialContent: string; }
 
 function GHIcon() {
   return (
@@ -18,7 +21,6 @@ function GHIcon() {
   );
 }
 
-/* find phase + lesson meta from PHASES data */
 function findMeta(phaseSlug: string, lessonSlug: string) {
   const lessonPath = `phases/${phaseSlug}/${lessonSlug}`;
   for (const phase of PHASES) {
@@ -28,7 +30,6 @@ function findMeta(phaseSlug: string, lessonSlug: string) {
   return null;
 }
 
-/* build flat list of all lessons that have a path, for prev/next nav */
 function flatLessons() {
   const list: { path: string; phaseName: string; lessonName: string; phaseSlug: string; lessonSlug: string }[] = [];
   PHASES.forEach(phase => {
@@ -50,13 +51,24 @@ function flatLessons() {
   return list;
 }
 
-export default function LessonViewer({ phaseSlug, lessonSlug }: Props) {
+/* ReactMarkdown custom components — mermaid code blocks → MermaidBlock */
+const mdComponents: Components = {
+  code({ className, children, ...rest }) {
+    const lang = /language-(\w+)/.exec(className ?? '')?.[1];
+    const code = String(children).replace(/\n$/, '');
+    if (lang === 'mermaid') return <MermaidBlock code={code} />;
+    /* check if inside a pre (block code) or inline */
+    return (
+      <code className={className} {...rest}>
+        {children}
+      </code>
+    );
+  },
+};
+
+export default function LessonViewer({ phaseSlug, lessonSlug, initialContent }: Props) {
   const router = useRouter();
   const { isComplete, markComplete, markIncomplete } = useProgress();
-
-  const [content, setContent] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError]   = useState(false);
 
   const lessonPath = `phases/${phaseSlug}/${lessonSlug}`;
   const done       = isComplete(lessonPath);
@@ -66,51 +78,36 @@ export default function LessonViewer({ phaseSlug, lessonSlug }: Props) {
   const prev       = idx > 0 ? all[idx - 1] : null;
   const next       = idx < all.length - 1 ? all[idx + 1] : null;
 
-  /* fetch from public/phases — served as static asset */
-  useEffect(() => {
-    setLoading(true);
-    setError(false);
-    setContent('');
+  const ghUrl = `https://github.com/cookie-may/felixforlearnai/tree/main/public/${lessonPath}`;
 
-    fetch(`/phases/${phaseSlug}/${lessonSlug}/docs/en.md`)
-      .then(r => {
-        if (!r.ok) throw new Error('not found');
-        return r.text();
-      })
-      .then(text => { setContent(text); setLoading(false); })
-      .catch(() => { setError(true); setLoading(false); });
-  }, [phaseSlug, lessonSlug]);
-
-  const ghUrl = `https://github.com/rohitg00/ai-engineering-from-scratch/tree/main/${lessonPath}`;
-
-  /* shared icon button style */
   const iconBtn: React.CSSProperties = {
     display: 'flex', alignItems: 'center', gap: '5px',
     fontSize: '10px', fontFamily: 'var(--pixel-font)', letterSpacing: '0.3px',
     color: 'var(--text-muted)',
     background: 'var(--bg-card)',
     border: '1px solid var(--border)',
-    padding: '5px 10px',
+    padding: '6px 11px',
     cursor: 'pointer', textDecoration: 'none',
     transition: 'border-color 0.15s, color 0.15s, box-shadow 0.15s',
   };
 
+  const noContent = !initialContent;
+
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', paddingTop: '56px' }}>
+    <div style={{ background: 'var(--bg)', minHeight: '100vh', paddingTop: '68px' }}>
 
       {/* ── sub-header ─────────────────────────────────── */}
       <div style={{
-        position: 'sticky', top: '56px', zIndex: 40,
+        position: 'sticky', top: '68px', zIndex: 40,
         background: 'var(--header-bg)', backdropFilter: 'blur(14px)',
         borderBottom: '1px solid var(--border)',
-        padding: '0 1.5rem', height: '46px',
+        padding: '0 1.5rem', height: '48px',
         display: 'flex', alignItems: 'center',
       }}>
         <div style={{
           maxWidth: '860px', width: '100%', margin: '0 auto',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
         }}>
-          {/* back */}
           <button onClick={() => router.back()} style={{ ...iconBtn, flexShrink: 0 }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 6px var(--accent-glow)'; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.boxShadow = 'none'; }}
@@ -118,24 +115,22 @@ export default function LessonViewer({ phaseSlug, lessonSlug }: Props) {
             <ArrowLeft size={11} /> BACK
           </button>
 
-          {/* breadcrumb */}
           {meta && (
             <div style={{ flex: 1, textAlign: 'center', overflow: 'hidden' }}>
               <span style={{ fontSize: '9px', fontFamily: 'var(--pixel-font)', color: 'var(--accent)', textShadow: '0 0 6px var(--accent-glow)', letterSpacing: '0.3px' }}>
                 PH{String(meta.phase.id).padStart(2,'0')}
               </span>
               <span style={{ fontSize: '9px', color: 'var(--text-dim)', margin: '0 6px' }}>›</span>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '13px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {meta.lesson.name}
               </span>
             </div>
           )}
 
-          {/* actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
             <a href={ghUrl} target="_blank" rel="noopener noreferrer"
               style={iconBtn}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-active)'; (e.currentTarget as HTMLElement).style.color = 'var(--accent)'; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent)'; (e.currentTarget as HTMLElement).style.color = 'var(--accent)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
             >
               <GHIcon /> SRC
@@ -150,20 +145,8 @@ export default function LessonViewer({ phaseSlug, lessonSlug }: Props) {
                 background: done ? 'var(--complete-dim)' : 'var(--bg-card)',
                 boxShadow: done ? '0 0 8px var(--complete-glow)' : 'none',
               }}
-              onMouseEnter={e => {
-                if (!done) {
-                  e.currentTarget.style.borderColor = 'var(--accent)';
-                  e.currentTarget.style.color = 'var(--accent)';
-                  e.currentTarget.style.boxShadow = '0 0 6px var(--accent-glow)';
-                }
-              }}
-              onMouseLeave={e => {
-                if (!done) {
-                  e.currentTarget.style.borderColor = 'var(--border)';
-                  e.currentTarget.style.color = 'var(--text-muted)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }
-              }}
+              onMouseEnter={e => { if (!done) { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 6px var(--accent-glow)'; }}}
+              onMouseLeave={e => { if (!done) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.boxShadow = 'none'; }}}
             >
               {done ? '✓ DONE' : '□ MARK DONE'}
             </button>
@@ -174,75 +157,51 @@ export default function LessonViewer({ phaseSlug, lessonSlug }: Props) {
       {/* ── content ────────────────────────────────────── */}
       <div style={{ maxWidth: '860px', margin: '0 auto', padding: '36px 1.5rem 80px' }}>
 
-        {loading && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', padding: '60px 0' }}>
-            <div style={{
-              fontFamily: 'var(--pixel-font)', fontSize: '10px', color: 'var(--accent)',
-              textShadow: '0 0 10px var(--accent-glow)',
-              animation: 'fadeUp 0.5s ease infinite alternate',
-            }}>
-              LOADING...
-            </div>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              {[0,1,2,3,4,5,6,7].map(i => (
-                <div key={i} style={{
-                  width: '6px', height: '6px',
-                  background: 'var(--accent)',
-                  opacity: (i % 3 === 0) ? 1 : 0.3,
-                  boxShadow: '0 0 4px var(--accent-glow)',
-                }} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {!loading && error && (
+        {noContent && (
           <div style={{
             background: 'var(--bg-card)', border: '1px solid var(--border)',
-            borderTop: '2px solid var(--accent)',
-            padding: '40px 32px', textAlign: 'center',
+            borderTop: '2px solid var(--accent)', padding: '40px 32px', textAlign: 'center',
           }}>
             <div style={{ fontFamily: 'var(--pixel-font)', fontSize: '10px', color: 'var(--accent)', textShadow: '0 0 10px var(--accent-glow)', marginBottom: '12px' }}>
               CONTENT NOT FOUND
             </div>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '20px' }}>
-              This lesson&apos;s markdown file could not be loaded.<br />
-              Make sure <code style={{ fontFamily: 'var(--mono-font)', color: 'var(--accent)' }}>
+            <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+              Make sure{' '}
+              <code style={{ fontFamily: 'var(--mono-font)', color: 'var(--accent)' }}>
                 public/phases/{phaseSlug}/{lessonSlug}/docs/en.md
-              </code> exists.
+              </code>{' '}
+              exists.
             </p>
-            <a href={ghUrl} target="_blank" rel="noopener noreferrer"
-              className="btn-ghost" style={{ fontSize: '11px' }}>
+            <a href={ghUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost" style={{ fontSize: '11px' }}>
               VIEW ON GITHUB ↗
             </a>
           </div>
         )}
 
-        {!loading && !error && content && (
+        {!noContent && (
           <>
             {/* lesson metadata bar */}
             {meta && (
               <div style={{
-                display: 'flex', gap: '20px', flexWrap: 'wrap',
+                display: 'flex', gap: '24px', flexWrap: 'wrap',
                 marginBottom: '28px', paddingBottom: '16px',
                 borderBottom: '1px solid var(--border)',
               }}>
                 {[
                   { label: 'PHASE',  val: `${String(meta.phase.id).padStart(2,'0')} · ${meta.phase.name}` },
-                  { label: 'TYPE',   val: meta.lesson.type  },
-                  { label: 'LANG',   val: meta.lesson.lang  },
+                  { label: 'TYPE',   val: meta.lesson.type },
+                  { label: 'LANG',   val: meta.lesson.lang },
                 ].map(item => (
                   <div key={item.label}>
-                    <div style={{ fontSize: '8px', fontFamily: 'var(--pixel-font)', color: 'var(--text-dim)', letterSpacing: '0.5px', marginBottom: '3px' }}>
+                    <div style={{ fontSize: '8px', fontFamily: 'var(--pixel-font)', color: 'var(--text-dim)', letterSpacing: '0.5px', marginBottom: '4px' }}>
                       {item.label}
                     </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--mono-font)' }}>
+                    <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'var(--mono-font)' }}>
                       {item.val}
                     </div>
                   </div>
                 ))}
 
-                {/* done badge */}
                 {done && (
                   <div style={{ marginLeft: 'auto' }}>
                     <span style={{
@@ -260,27 +219,26 @@ export default function LessonViewer({ phaseSlug, lessonSlug }: Props) {
               </div>
             )}
 
-            {/* rendered markdown */}
+            {/* rendered markdown — mermaid blocks auto-rendered */}
             <div className="lesson-prose">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {content}
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                {initialContent}
               </ReactMarkdown>
             </div>
 
-            {/* mark-complete CTA at bottom */}
+            {/* mark-complete CTA */}
             {!done && (
               <div style={{
-                marginTop: '40px',
-                padding: '20px 24px',
+                marginTop: '40px', padding: '20px 24px',
                 background: 'var(--accent-dim)',
                 border: '1px solid var(--accent-border)',
                 borderLeft: '3px solid var(--accent)',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap',
               }}>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
                   Finished reading? Mark this lesson complete to track your progress.
                 </span>
-                <button onClick={() => markComplete(lessonPath)} className="btn-primary" style={{ fontSize: '11px', padding: '7px 18px' }}>
+                <button onClick={() => markComplete(lessonPath)} className="btn-primary" style={{ fontSize: '11px', padding: '8px 18px' }}>
                   ✓ MARK COMPLETE
                 </button>
               </div>
@@ -294,43 +252,31 @@ export default function LessonViewer({ phaseSlug, lessonSlug }: Props) {
             }}>
               {prev ? (
                 <button onClick={() => router.push(`/lessons/${prev.phaseSlug}/${prev.lessonSlug}`)}
-                  style={{
-                    background: 'var(--bg-card)', border: '1px solid var(--border)',
-                    padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
-                    transition: 'border-color 0.15s, box-shadow 0.15s',
-                  }}
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', padding: '14px 16px', cursor: 'pointer', textAlign: 'left', transition: 'border-color 0.15s, box-shadow 0.15s' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 8px var(--accent-glow)'; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
                   <div style={{ fontSize: '8px', fontFamily: 'var(--pixel-font)', color: 'var(--text-dim)', marginBottom: '5px', letterSpacing: '0.3px' }}>◀ PREVIOUS</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{prev.lessonName}</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{prev.lessonName}</div>
                 </button>
               ) : <div />}
 
               {next ? (
                 <button onClick={() => router.push(`/lessons/${next.phaseSlug}/${next.lessonSlug}`)}
-                  style={{
-                    background: 'var(--bg-card)', border: '1px solid var(--border)',
-                    padding: '14px 16px', cursor: 'pointer', textAlign: 'right',
-                    transition: 'border-color 0.15s, box-shadow 0.15s',
-                  }}
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', padding: '14px 16px', cursor: 'pointer', textAlign: 'right', transition: 'border-color 0.15s, box-shadow 0.15s' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 8px var(--accent-glow)'; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
                   <div style={{ fontSize: '8px', fontFamily: 'var(--pixel-font)', color: 'var(--text-dim)', marginBottom: '5px', letterSpacing: '0.3px' }}>NEXT ▶</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{next.lessonName}</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{next.lessonName}</div>
                 </button>
               ) : (
                 <button
                   onClick={() => { markComplete(lessonPath); router.push('/'); }}
-                  style={{
-                    background: 'var(--accent-dim)', border: '1px solid var(--accent-border)',
-                    padding: '14px 16px', cursor: 'pointer', textAlign: 'right',
-                    boxShadow: '0 0 10px var(--accent-glow)',
-                  }}
+                  style={{ background: 'var(--accent-dim)', border: '1px solid var(--accent-border)', padding: '14px 16px', cursor: 'pointer', textAlign: 'right', boxShadow: '0 0 10px var(--accent-glow)' }}
                 >
                   <div style={{ fontSize: '8px', fontFamily: 'var(--pixel-font)', color: 'var(--accent)', marginBottom: '5px', letterSpacing: '0.3px', textShadow: '0 0 6px var(--accent-glow)' }}>🎉 LAST LESSON</div>
-                  <div style={{ fontSize: '12px', color: 'var(--accent)' }}>Finish & go home</div>
+                  <div style={{ fontSize: '13px', color: 'var(--accent)' }}>Finish & go home</div>
                 </button>
               )}
             </div>

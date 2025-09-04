@@ -1,110 +1,163 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { GLOSSARY, GlossaryEntry, searchGlossary } from '@/data/glossary';
-import { Search } from 'lucide-react';
+import { GLOSSARY } from '@/data/glossary';
+import PixelPagination from '@/components/PixelPagination';
+
+const PER_PAGE = 10;
 
 export default function GlossaryPage() {
   const [search, setSearch] = useState('');
+  const [page, setPage]     = useState(1);
 
-  const filteredTerms = useMemo(() => {
-    if (!search.trim()) return GLOSSARY;
-    return searchGlossary(search);
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return GLOSSARY;
+    return GLOSSARY.filter(e =>
+      e.term.toLowerCase().includes(q) ||
+      e.says.toLowerCase().includes(q) ||
+      e.means.toLowerCase().includes(q)
+    );
   }, [search]);
 
+  const handleSearch = (v: string) => { setSearch(v); setPage(1); };
+  const pageSlice    = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
   return (
-    <div className="min-h-screen py-12 px-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="font-heading text-4xl md:text-5xl mb-4">AI Glossary</h1>
-          <p style={{ color: 'var(--text-muted)' }}>
-            What people <em>say</em> vs what things actually <em>mean</em>
+    <div style={{ minHeight: '100vh', padding: '48px 24px' }}>
+      <div style={{ maxWidth: '860px', margin: '0 auto' }}>
+
+        {/* ── Header ── */}
+        <div style={{ marginBottom: '40px' }}>
+          <div className="section-label">
+            <div className="bar" />
+            <span>AI GLOSSARY</span>
+          </div>
+          <h1 style={{
+            fontFamily: 'var(--pixel-font)', fontSize: '18px',
+            color: 'var(--text)', marginBottom: '10px', lineHeight: 1.4,
+          }}>
+            WHAT PEOPLE SAY vs WHAT IT MEANS
+          </h1>
+          <p style={{ fontFamily: 'var(--body-font)', fontSize: '15px', color: 'var(--text-muted)', maxWidth: '520px' }}>
+            277 terms. No jargon. No fluff. Just what things actually mean.
           </p>
         </div>
 
-        {/* Search */}
-        <div className="mb-8 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'var(--text-muted)' }} />
+        {/* ── Search ── */}
+        <div style={{ position: 'relative', marginBottom: '28px' }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }}>
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
           <input
+            className="pixel-input"
+            style={{ paddingLeft: '40px', fontSize: '15px' }}
             type="text"
-            placeholder="Search glossary terms..."
+            placeholder="Search terms..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 rounded-xl border-2 text-lg outline-none"
-            style={{
-              background: 'var(--bg-surface)',
-              borderColor: 'var(--border)',
-              color: 'var(--text)'
-            }}
+            onChange={e => handleSearch(e.target.value)}
           />
         </div>
 
-        {/* Results count */}
-        <p className="mb-6 text-sm" style={{ color: 'var(--text-muted)' }}>
-          {filteredTerms.length} {filteredTerms.length === 1 ? 'term' : 'terms'} found
-        </p>
+        {/* ── Count ── */}
+        <div style={{ marginBottom: '20px' }}>
+          <span style={{ fontFamily: 'var(--pixel-font)', fontSize: '8px', color: 'var(--text-dim)', letterSpacing: '0.5px' }}>
+            {filtered.length} {filtered.length === 1 ? 'TERM' : 'TERMS'} FOUND
+          </span>
+        </div>
 
-        {/* Glossary Terms */}
-        <div className="space-y-4">
-          {filteredTerms.map((entry, i) => (
+        {/* ── Terms ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {pageSlice.map((entry, i) => (
             <div
               key={i}
-              className="p-6 rounded-2xl border-2"
               style={{
-                background: 'var(--bg-surface)',
-                borderColor: 'var(--border)'
+                background:  'var(--bg-card)',
+                border:      '1px solid var(--border)',
+                borderLeft:  '3px solid var(--accent)',
+                padding:     '20px 24px',
+                transition:  'border-color 0.12s, box-shadow 0.12s',
+                boxShadow:   '0 0 14px rgba(232,108,44,0.04)',
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLDivElement).style.boxShadow = '0 0 18px var(--accent-glow)';
+                (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--accent)';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLDivElement).style.boxShadow = '0 0 14px rgba(232,108,44,0.04)';
+                (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border)';
               }}
             >
-              <h2 className="font-heading text-2xl mb-3" style={{ color: 'var(--text)' }}>
+              {/* Term name */}
+              <h2 style={{
+                fontFamily: 'var(--pixel-font)', fontSize: '12px',
+                color: 'var(--accent)', marginBottom: '16px',
+                textShadow: '0 0 10px var(--accent-glow)',
+                letterSpacing: '0.5px',
+              }}>
                 {entry.term}
               </h2>
 
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <span
-                    className="text-sm font-mono font-semibold px-2 py-1 rounded shrink-0"
-                    style={{
-                      background: 'rgba(255, 107, 107, 0.1)',
-                      color: 'var(--accent)'
-                    }}
-                  >
-                    Says:
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {/* Says */}
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                  <span style={{
+                    fontFamily: 'var(--pixel-font)', fontSize: '7px',
+                    padding: '4px 8px', whiteSpace: 'nowrap', flexShrink: 0,
+                    background: 'var(--accent-dim)',
+                    border: '1px solid var(--accent-border)',
+                    color: 'var(--accent)', letterSpacing: '0.3px',
+                  }}>
+                    SAYS
                   </span>
-                  <p style={{ color: 'var(--text-muted)' }}>{entry.says}</p>
+                  <p style={{ fontFamily: 'var(--body-font)', fontSize: '14px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.7 }}>
+                    {entry.says}
+                  </p>
                 </div>
 
-                <div className="flex items-start gap-3">
-                  <span
-                    className="text-sm font-mono font-semibold px-2 py-1 rounded shrink-0"
-                    style={{
-                      background: 'rgba(90, 184, 143, 0.1)',
-                      color: 'var(--complete)'
-                    }}
-                  >
-                    Means:
+                {/* Means */}
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                  <span style={{
+                    fontFamily: 'var(--pixel-font)', fontSize: '7px',
+                    padding: '4px 8px', whiteSpace: 'nowrap', flexShrink: 0,
+                    background: 'var(--complete-dim)',
+                    border: '1px solid rgba(114,184,48,0.3)',
+                    color: 'var(--complete)', letterSpacing: '0.3px',
+                  }}>
+                    MEANS
                   </span>
-                  <p style={{ color: 'var(--text)' }}>{entry.means}</p>
+                  <p style={{ fontFamily: 'var(--body-font)', fontSize: '14px', color: 'var(--text)', margin: 0, lineHeight: 1.7, fontWeight: 500 }}>
+                    {entry.means}
+                  </p>
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        {filteredTerms.length === 0 && (
-          <div className="text-center py-12">
-            <p style={{ color: 'var(--text-muted)' }}>No glossary terms found matching "{search}"</p>
+        {pageSlice.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '60px 24px' }}>
+            <p style={{ fontFamily: 'var(--pixel-font)', fontSize: '9px', color: 'var(--text-dim)' }}>
+              NO TERMS MATCH &ldquo;{search}&rdquo;
+            </p>
           </div>
         )}
 
-        {/* Bottom info */}
-        <div className="mt-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-          <p>
-            The SLAFAI glossary provides clear, practical explanations of AI terminology.
-            <br />
-            No jargon, no fluff — just what things actually mean.
-          </p>
-        </div>
+        <PixelPagination
+          page={page}
+          total={filtered.length}
+          perPage={PER_PAGE}
+          onChange={p => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+        />
+
+        <p style={{
+          textAlign: 'center', marginTop: '48px',
+          fontFamily: 'var(--mono-font)', fontSize: '12px',
+          color: 'var(--text-dim)',
+        }}>
+          Felix glossary — practical definitions for AI terms, no fluff.
+        </p>
       </div>
     </div>
   );

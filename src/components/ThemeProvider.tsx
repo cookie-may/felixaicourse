@@ -15,7 +15,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>('dark');
 
   useEffect(() => {
-    const stored = localStorage.getItem('slafai-theme') as Theme | null;
+    const stored = localStorage.getItem('felix-theme') as Theme | null;
     if (stored) {
       setTheme(stored);
     } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
@@ -25,7 +25,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('slafai-theme', theme);
+    localStorage.setItem('felix-theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {

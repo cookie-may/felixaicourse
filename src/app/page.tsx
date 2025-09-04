@@ -89,7 +89,7 @@ export default function HomePage() {
   const overallPct = total > 0 && userDone > 0 ? Math.round((userDone / total) * 100) : 0;
 
   return (
-    <div style={{ paddingTop: '56px', minHeight: '100vh' }}>
+    <div style={{ paddingTop: '68px', minHeight: '100vh' }}>
 
       {/* ── HERO ─────────────────────────────────────────── */}
       <section style={{
@@ -216,7 +216,7 @@ export default function HomePage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{ width: '3px', height: '18px', background: 'var(--accent)', boxShadow: '0 0 8px var(--accent-glow)' }} />
-              <span style={{ fontFamily: 'var(--pixel-font)', fontSize: '10px', color: 'var(--accent)', textShadow: '0 0 8px var(--accent-glow)', letterSpacing: '0.5px' }}>
+              <span style={{ fontFamily: 'var(--pixel-font)', fontSize: '13px', color: 'var(--accent)', textShadow: '0 0 8px var(--accent-glow)', letterSpacing: '0.5px' }}>
                 THE 20 PHASES
               </span>
             </div>
@@ -253,7 +253,7 @@ export default function HomePage() {
                   </div>
 
                   {/* name */}
-                  <div style={{ fontSize: '12px', color: '#d4c0a8', fontWeight: '500', marginBottom: '10px', lineHeight: 1.35 }}>
+                  <div style={{ fontSize: '14px', color: '#d4c0a8', fontWeight: '500', marginBottom: '10px', lineHeight: 1.35 }}>
                     {phase.name}
                   </div>
 
@@ -295,7 +295,7 @@ export default function HomePage() {
         <div style={{ maxWidth: '1280px', margin: '0 auto', paddingTop: '48px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
             <div style={{ width: '3px', height: '18px', background: 'var(--accent)', boxShadow: '0 0 8px var(--accent-glow)' }} />
-            <span style={{ fontFamily: 'var(--pixel-font)', fontSize: '10px', color: 'var(--accent)', textShadow: '0 0 8px var(--accent-glow)', letterSpacing: '0.5px' }}>
+            <span style={{ fontFamily: 'var(--pixel-font)', fontSize: '13px', color: 'var(--accent)', textShadow: '0 0 8px var(--accent-glow)', letterSpacing: '0.5px' }}>
               WHY THIS COURSE
             </span>
           </div>
@@ -303,8 +303,8 @@ export default function HomePage() {
             {FEATS.map(f => (
               <div key={f.title} style={{ background: 'var(--bg-card)', padding: '20px 18px', border: '0 none' }}>
                 <div style={{ fontSize: '18px', marginBottom: '10px', color: 'var(--accent)', textShadow: '0 0 10px var(--accent-glow)' }}>{f.icon}</div>
-                <div style={{ fontSize: '12px', fontWeight: '600', color: '#d4c0a8', marginBottom: '7px' }}>{f.title}</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-dim)', lineHeight: 1.6 }}>{f.desc}</div>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: '#d4c0a8', marginBottom: '7px' }}>{f.title}</div>
+                <div style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6 }}>{f.desc}</div>
               </div>
             ))}
           </div>
@@ -316,7 +316,7 @@ export default function HomePage() {
         <div style={{ maxWidth: '1280px', margin: '0 auto', paddingTop: '48px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
             <div style={{ width: '3px', height: '18px', background: 'var(--accent)', boxShadow: '0 0 8px var(--accent-glow)' }} />
-            <span style={{ fontFamily: 'var(--pixel-font)', fontSize: '10px', color: 'var(--accent)', textShadow: '0 0 8px var(--accent-glow)', letterSpacing: '0.5px' }}>
+            <span style={{ fontFamily: 'var(--pixel-font)', fontSize: '13px', color: 'var(--accent)', textShadow: '0 0 8px var(--accent-glow)', letterSpacing: '0.5px' }}>
               ROADMAP
             </span>
           </div>
@@ -406,7 +406,7 @@ export default function HomePage() {
             fontFamily: 'var(--mono-font)', fontSize: '12px', color: 'var(--accent)',
             textShadow: '0 0 8px rgba(232,108,44,0.3)',
           }}>
-            git clone https://github.com/rohitg00/ai-engineering-from-scratch.git
+            git clone https://github.com/cookie-may/felixforlearnai
           </div>
           <div>
             <a href="#phases" className="btn-primary">▶ BROWSE PHASES</a>

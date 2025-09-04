@@ -3,225 +3,298 @@
 import { useState, useMemo } from 'react';
 import { PHASES } from '@/data/phases';
 import { useProgress } from '@/components/ProgressProvider';
-import { Search } from 'lucide-react';
+import Link from 'next/link';
+import PixelPagination from '@/components/PixelPagination';
+
+const PER_PAGE = 20;
 
 export default function CatalogPage() {
-  const [search, setSearch] = useState('');
+  const [search, setSearch]           = useState('');
   const [phaseFilter, setPhaseFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const { isComplete } = useProgress();
+  const [typeFilter, setTypeFilter]   = useState('all');
+  const [page, setPage]               = useState(1);
+  const { isComplete }                = useProgress();
 
   const allLessons = useMemo(() => {
     const lessons: Array<{
       name: string;
       type: string;
       lang: string;
-      status: string;
-      url?: string;
+      path?: string;
       phaseName: string;
       phaseId: number;
     }> = [];
-
     PHASES.forEach(phase => {
       phase.lessons.forEach(lesson => {
         lessons.push({
-          ...lesson,
+          name:      lesson.name,
+          type:      lesson.type,
+          lang:      lesson.lang,
+          path:      lesson.path,
           phaseName: phase.name,
-          phaseId: phase.id,
+          phaseId:   phase.id,
         });
       });
     });
-
     return lessons;
   }, []);
 
-  const filteredLessons = useMemo(() => {
-    return allLessons.filter(lesson => {
-      const matchesSearch = search === '' ||
-        lesson.name.toLowerCase().includes(search.toLowerCase()) ||
-        lesson.lang.toLowerCase().includes(search.toLowerCase()) ||
-        lesson.phaseName.toLowerCase().includes(search.toLowerCase());
-
-      const matchesPhase = phaseFilter === 'all' || lesson.phaseId === parseInt(phaseFilter);
-
-      const matchesStatus = statusFilter === 'all' ||
-        lesson.status === statusFilter ||
-        (statusFilter === 'user-complete' && lesson.phaseId !== undefined);
-
-      return matchesSearch && matchesPhase && matchesStatus;
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return allLessons.filter(l => {
+      const matchSearch = !q ||
+        l.name.toLowerCase().includes(q) ||
+        l.lang.toLowerCase().includes(q) ||
+        l.phaseName.toLowerCase().includes(q);
+      const matchPhase = phaseFilter === 'all' || l.phaseId === parseInt(phaseFilter);
+      const matchType  = typeFilter === 'all' || l.type === typeFilter;
+      return matchSearch && matchPhase && matchType;
     });
-  }, [allLessons, search, phaseFilter, statusFilter]);
+  }, [allLessons, search, phaseFilter, typeFilter]);
+
+  /* reset page on filter change */
+  const handleSearch = (v: string) => { setSearch(v); setPage(1); };
+  const handlePhase  = (v: string) => { setPhaseFilter(v); setPage(1); };
+  const handleType   = (v: string) => { setTypeFilter(v); setPage(1); };
+
+  const pageSlice = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  const selStyle: React.CSSProperties = {
+    background:  'var(--bg-card)',
+    border:      '1px solid var(--border)',
+    color:       'var(--text)',
+    fontFamily:  'var(--mono-font)',
+    fontSize:    '13px',
+    padding:     '10px 14px',
+    outline:     'none',
+    cursor:      'pointer',
+  };
 
   return (
-    <div className="min-h-screen py-12 px-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="font-heading text-4xl md:text-5xl mb-4">Lesson Catalog</h1>
-          <p style={{ color: 'var(--text-muted)' }}>
-            Every lesson across all 20 phases. Search, filter, sort.
+    <div style={{ minHeight: '100vh', padding: '48px 24px' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+
+        {/* ── Header ── */}
+        <div style={{ marginBottom: '40px' }}>
+          <div className="section-label">
+            <div className="bar" />
+            <span>LESSON CATALOG</span>
+          </div>
+          <h1 style={{
+            fontFamily: 'var(--pixel-font)', fontSize: '20px',
+            color: 'var(--text)', marginBottom: '10px', lineHeight: 1.4,
+          }}>
+            ALL 272+ LESSONS
+          </h1>
+          <p style={{ fontFamily: 'var(--body-font)', fontSize: '15px', color: 'var(--text-muted)', maxWidth: '560px' }}>
+            Every lesson across all 20 phases. Search, filter by phase or type, and jump straight in.
           </p>
         </div>
 
-        {/* Filters */}
-        <div className="mb-8 flex flex-col md:flex-row gap-4 items-center">
+        {/* ── Filters ── */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '24px', alignItems: 'center' }}>
           {/* Search */}
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'var(--text-muted)' }} />
+          <div style={{ position: 'relative', flex: '1 1 260px', minWidth: '200px' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }}>
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
             <input
+              className="pixel-input"
+              style={{ paddingLeft: '36px' }}
               type="text"
-              placeholder="Search lessons..."
+              placeholder="Search lessons, phases, languages..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 outline-none"
-              style={{
-                background: 'var(--bg-surface)',
-                borderColor: 'var(--border)',
-                color: 'var(--text)'
-              }}
+              onChange={e => handleSearch(e.target.value)}
             />
           </div>
 
-          {/* Phase Filter */}
-          <select
-            value={phaseFilter}
-            onChange={(e) => setPhaseFilter(e.target.value)}
-            className="px-4 py-3 rounded-xl border-2 outline-none cursor-pointer"
-            style={{
-              background: 'var(--bg-surface)',
-              borderColor: 'var(--border)',
-              color: 'var(--text)'
-            }}
-          >
-            <option value="all">All Phases</option>
-            {PHASES.map(phase => (
-              <option key={phase.id} value={phase.id}>
-                Phase {String(phase.id).padStart(2, '0')}: {phase.name}
+          {/* Phase filter */}
+          <select style={selStyle} value={phaseFilter} onChange={e => handlePhase(e.target.value)}>
+            <option value="all">ALL PHASES</option>
+            {PHASES.map(p => (
+              <option key={p.id} value={p.id}>
+                {String(p.id).padStart(2, '0')} · {p.name}
               </option>
             ))}
           </select>
 
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-3 rounded-xl border-2 outline-none cursor-pointer"
-            style={{
-              background: 'var(--bg-surface)',
-              borderColor: 'var(--border)',
-              color: 'var(--text)'
-            }}
-          >
-            <option value="all">All Status</option>
-            <option value="complete">Complete</option>
-            <option value="in-progress">In Progress</option>
-            <option value="planned">Planned</option>
+          {/* Type filter */}
+          <select style={selStyle} value={typeFilter} onChange={e => handleType(e.target.value)}>
+            <option value="all">ALL TYPES</option>
+            <option value="Build">BUILD</option>
+            <option value="Learn">LEARN</option>
           </select>
         </div>
 
-        {/* Results count */}
-        <p className="mb-4 text-sm" style={{ color: 'var(--text-muted)' }}>
-          Showing {filteredLessons.length} of {allLessons.length} lessons
-        </p>
+        {/* ── Count ── */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <span style={{ fontFamily: 'var(--pixel-font)', fontSize: '8px', color: 'var(--text-dim)', letterSpacing: '0.5px' }}>
+            SHOWING {Math.min((page - 1) * PER_PAGE + 1, filtered.length)}–{Math.min(page * PER_PAGE, filtered.length)} OF {filtered.length}
+          </span>
+          <span style={{ fontFamily: 'var(--pixel-font)', fontSize: '8px', color: 'var(--text-dim)' }}>
+            {allLessons.length} TOTAL
+          </span>
+        </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto rounded-xl border-2" style={{ borderColor: 'var(--border)' }}>
-          <table className="w-full">
-            <thead
-              className="border-b-2"
-              style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
-            >
-              <tr>
-                <th className="text-left p-4 font-mono text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>
-                  Phase
-                </th>
-                <th className="text-left p-4 font-mono text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>
-                  Lesson
-                </th>
-                <th className="text-left p-4 font-mono text-sm font-semibold hidden sm:table-cell" style={{ color: 'var(--text-muted)' }}>
-                  Type
-                </th>
-                <th className="text-left p-4 font-mono text-sm font-semibold hidden md:table-cell" style={{ color: 'var(--text-muted)' }}>
-                  Language
-                </th>
-                <th className="text-left p-4 font-mono text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>
-                  Status
-                </th>
+        {/* ── Table ── */}
+        <div style={{
+          border: '1px solid var(--border)',
+          borderTop: '3px solid var(--accent)',
+          background: 'var(--bg-card)',
+          overflowX: 'auto',
+          boxShadow: '0 0 20px rgba(232,108,44,0.06)',
+        }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+                {['PHASE', 'LESSON', 'TYPE', 'LANG', 'STATUS'].map(h => (
+                  <th key={h} style={{
+                    textAlign: 'left', padding: '14px 16px',
+                    fontFamily: 'var(--pixel-font)', fontSize: '8px',
+                    color: 'var(--accent)', letterSpacing: '0.5px',
+                    whiteSpace: 'nowrap',
+                  }}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {filteredLessons.map((lesson, i) => (
-                <tr
-                  key={i}
-                  className="border-b last:border-b-0 hover:bg-[var(--bg-surface)] transition-colors"
-                  style={{ borderColor: 'var(--border)' }}
-                >
-                  <td className="p-4">
-                    <span className="text-sm font-mono" style={{ color: 'var(--accent)' }}>
-                      {String(lesson.phaseId).padStart(2, '0')}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    {lesson.url ? (
-                      <a
-                        href={lesson.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium hover:opacity-80"
-                        style={{ color: 'var(--text)', textDecoration: 'none' }}
-                      >
-                        {lesson.name}
-                      </a>
-                    ) : (
-                      <span style={{ color: 'var(--text-muted)' }}>{lesson.name}</span>
-                    )}
-                  </td>
-                  <td className="p-4 hidden sm:table-cell">
-                    <span
-                      className="px-2 py-1 rounded text-xs font-mono"
-                      style={{
+              {pageSlice.map((lesson, i) => {
+                const parts   = lesson.path?.split('/');
+                const phSlug  = parts?.[1];
+                const lsSlug  = parts?.[2];
+                const hasLink = !!phSlug && !!lsSlug;
+                const done    = lesson.path ? isComplete(lesson.path) : false;
+
+                return (
+                  <tr
+                    key={i}
+                    style={{
+                      borderBottom: '1px solid var(--border-dim)',
+                      transition: 'background 0.12s',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-card-hover)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    {/* Phase */}
+                    <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
+                      <span style={{
+                        fontFamily: 'var(--pixel-font)', fontSize: '9px',
+                        color: 'var(--accent)', letterSpacing: '0.3px',
+                      }}>
+                        {String(lesson.phaseId).padStart(2, '0')}
+                      </span>
+                      <span style={{
+                        display: 'block', fontFamily: 'var(--mono-font)',
+                        fontSize: '11px', color: 'var(--text-dim)', marginTop: '2px',
+                      }}>
+                        {lesson.phaseName}
+                      </span>
+                    </td>
+
+                    {/* Lesson name */}
+                    <td style={{ padding: '14px 16px', minWidth: '200px' }}>
+                      {hasLink ? (
+                        <Link
+                          href={`/lessons/${phSlug}/${lsSlug}`}
+                          style={{
+                            fontFamily: 'var(--body-font)', fontSize: '14px',
+                            color: 'var(--text)', textDecoration: 'none',
+                            fontWeight: 500,
+                          }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--accent)'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text)'; }}
+                        >
+                          {lesson.name}
+                        </Link>
+                      ) : (
+                        <span style={{ fontFamily: 'var(--body-font)', fontSize: '14px', color: 'var(--text-muted)' }}>
+                          {lesson.name}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Type */}
+                    <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
+                      <span style={{
+                        fontFamily: 'var(--pixel-font)', fontSize: '7px',
+                        padding: '4px 8px',
+                        border: `1px solid ${lesson.type === 'Build' ? 'var(--complete)' : 'var(--accent)'}`,
                         color: lesson.type === 'Build' ? 'var(--complete)' : 'var(--accent)',
-                        border: '1px solid var(--border)'
-                      }}
-                    >
-                      {lesson.type}
-                    </span>
-                  </td>
-                  <td className="p-4 hidden md:table-cell">
-                    <span className="text-sm font-mono" style={{ color: 'var(--text-muted)' }}>
-                      {lesson.lang}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <span
-                      className="px-2 py-1 rounded-full text-xs font-mono capitalize"
-                      style={{
-                        background: lesson.status === 'complete'
-                          ? 'rgba(90, 184, 143, 0.15)'
-                          : lesson.status === 'in-progress'
-                          ? 'rgba(255, 107, 107, 0.15)'
-                          : 'rgba(128, 112, 96, 0.15)',
-                        color: lesson.status === 'complete'
-                          ? 'var(--complete)'
-                          : lesson.status === 'in-progress'
-                          ? 'var(--accent)'
-                          : 'var(--planned)'
-                      }}
-                    >
-                      {lesson.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+                        letterSpacing: '0.3px',
+                        boxShadow: lesson.type === 'Build'
+                          ? '0 0 6px var(--complete-glow)'
+                          : '0 0 6px var(--accent-glow)',
+                      }}>
+                        {lesson.type.toUpperCase()}
+                      </span>
+                    </td>
+
+                    {/* Lang */}
+                    <td style={{ padding: '14px 16px' }}>
+                      <span style={{ fontFamily: 'var(--mono-font)', fontSize: '12px', color: 'var(--text-muted)' }}>
+                        {lesson.lang}
+                      </span>
+                    </td>
+
+                    {/* Status */}
+                    <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
+                      {done ? (
+                        <span style={{
+                          fontFamily: 'var(--pixel-font)', fontSize: '7px',
+                          padding: '4px 8px',
+                          background: 'var(--complete-dim)',
+                          border: '1px solid var(--complete)',
+                          color: 'var(--complete)',
+                          letterSpacing: '0.3px',
+                          boxShadow: '0 0 6px var(--complete-glow)',
+                        }}>
+                          ✓ DONE
+                        </span>
+                      ) : hasLink ? (
+                        <span style={{
+                          fontFamily: 'var(--pixel-font)', fontSize: '7px',
+                          padding: '4px 8px',
+                          background: 'var(--accent-dim)',
+                          border: '1px solid var(--accent-border)',
+                          color: 'var(--text-dim)',
+                          letterSpacing: '0.3px',
+                        }}>
+                          OPEN
+                        </span>
+                      ) : (
+                        <span style={{
+                          fontFamily: 'var(--pixel-font)', fontSize: '7px',
+                          padding: '4px 8px',
+                          border: '1px solid var(--border)',
+                          color: 'var(--text-dim)',
+                          letterSpacing: '0.3px',
+                        }}>
+                          —
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
+
+          {pageSlice.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '48px 24px' }}>
+              <p style={{ fontFamily: 'var(--pixel-font)', fontSize: '9px', color: 'var(--text-dim)' }}>
+                NO LESSONS MATCH YOUR SEARCH
+              </p>
+            </div>
+          )}
         </div>
 
-        {filteredLessons.length === 0 && (
-          <div className="text-center py-12">
-            <p style={{ color: 'var(--text-muted)' }}>No lessons found matching your criteria.</p>
-          </div>
-        )}
+        <PixelPagination
+          page={page}
+          total={filtered.length}
+          perPage={PER_PAGE}
+          onChange={p => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+        />
       </div>
     </div>
   );

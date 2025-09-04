@@ -14,8 +14,8 @@
   --border-dim:    #1e1408;
   --border-active: #E86C2C;
   --text:          #f2e8d8;
-  --text-muted:    #8c7460;
-  --text-dim:      #4a3828;
+  --text-muted:    #a08872;
+  --text-dim:      #6a5040;
   --accent:        #E86C2C;
   --accent-glow:   rgba(232, 108, 44, 0.40);
   --accent-dim:    rgba(232, 108, 44, 0.10);
@@ -36,7 +36,7 @@
 /* ─── Reset / base ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; scroll-padding-top: 56px; }
+html { scroll-behavior: smooth; scroll-padding-top: 68px; }
 
 body {
   background-color: var(--bg);
@@ -50,8 +50,8 @@ body {
   background-size: auto, 16px 16px;
   color: var(--text);
   font-family: var(--body-font);
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 17px;
+  line-height: 1.7;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -315,3 +315,89 @@ body::after {
 .lesson-prose pre::-webkit-scrollbar       { height: 4px; }
 .lesson-prose pre::-webkit-scrollbar-track { background: var(--bg); }
 .lesson-prose pre::-webkit-scrollbar-thumb { background: var(--accent); }
+
+/* ─── Section label (orange bar + pixel heading) ─────────────── */
+.section-label {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+}
+.section-label .bar {
+  width: 3px; height: 16px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+.section-label span {
+  font-family: var(--pixel-font); font-size: 10px;
+  color: var(--accent); letter-spacing: 0.5px;
+  text-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* ─── Pixel input ────────────────────────────────────────────── */
+.pixel-input {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--body-font);
+  font-size: 15px;
+  padding: 11px 14px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.pixel-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow), inset 0 0 8px rgba(232,108,44,0.04);
+}
+.pixel-input::placeholder { color: var(--text-dim); }
+
+/* ─── Skeleton shimmer ───────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s infinite;
+}
+
+/* ─── Page scan-in animation ─────────────────────────────────── */
+@keyframes scanIn {
+  0%   { clip-path: inset(0 0 100% 0); opacity: 0.4; }
+  100% { clip-path: inset(0 0 0% 0);   opacity: 1; }
+}
+.scan-in { animation: scanIn 0.45s cubic-bezier(0.4,0,0.2,1) forwards; }
+
+/* ─── Page entry animation ───────────────────────────────────── */
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+main > * { animation: pageIn 0.4s ease forwards; }
+
+/* ─── Mermaid diagram wrapper ────────────────────────────────── */
+.mermaid-wrap {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  padding: 24px 20px;
+  margin: 1.25rem 0;
+  overflow-x: auto;
+  box-shadow: 0 0 14px rgba(232,108,44,0.06), inset 0 0 20px rgba(0,0,0,0.5);
+}
+.mermaid-wrap svg { max-width: 100%; display: block; margin: 0 auto; }
+
+/* ─── Pixel pagination ───────────────────────────────────────── */
+.pag-btn {
+  font-family: var(--pixel-font); font-size: 9px; letter-spacing: 0.3px;
+  padding: 9px 13px; background: var(--bg-card); border: 1px solid var(--border);
+  color: var(--text-muted); cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, box-shadow 0.12s;
+}
+.pag-btn:hover:not(:disabled) {
+  border-color: var(--accent); color: var(--accent); box-shadow: 0 0 8px var(--accent-glow);
+}
+.pag-btn.active {
+  border-color: var(--accent); color: var(--accent);
+  background: var(--accent-dim); box-shadow: 0 0 10px var(--accent-glow);
+}
+.pag-btn:disabled { opacity: 0.3; cursor: not-allowed; }

@@ -56,14 +56,14 @@ export default function AIChat() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`,
           'HTTP-Referer': window.location.origin,
-          'X-Title': 'SLAFAI',
+          'X-Title': 'Felix',
         },
         body: JSON.stringify({
           model: 'anthropic/claude-3-haiku',
           messages: [
             {
               role: 'system',
-              content: `You are an AI engineering tutor for the SLAFAI course.
+              content: `You are an AI engineering tutor for the Felix course (Framework for Enhanced Learning & Intelligent eXperience).
               The course covers: Math foundations, ML fundamentals, Deep Learning, Computer Vision, NLP, Speech & Audio, Transformers, Generative AI, Reinforcement Learning, LLMs from Scratch, LLM Engineering, Multimodal AI, Tools & Protocols (MCP), Agent Engineering, Autonomous Systems, Multi-Agent & Swarms, Infrastructure & Production, Ethics & Safety.
 
               Provide clear, practical explanations. Use code examples when relevant. Don't be overly verbose. Be encouraging and supportive of learners.`
