@@ -107,9 +107,9 @@ export default function HomePage() {
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
             background: 'var(--accent-dim)', border: '1px solid var(--accent-border)',
-            color: 'var(--accent)', fontSize: '10px',
+            color: 'var(--accent)', fontSize: '12px',
             fontFamily: 'var(--pixel-font)', letterSpacing: '0.5px',
-            padding: '6px 14px', marginBottom: '28px',
+            padding: '7px 16px', marginBottom: '28px',
           }}>
             <div style={{ width: '5px', height: '5px', background: 'var(--accent)', boxShadow: '0 0 6px var(--accent-glow)' }} />
             OPEN SOURCE · MIT · ~290H
@@ -129,17 +129,17 @@ export default function HomePage() {
             <span style={{
               display: 'block',
               fontFamily: 'var(--pixel-font)',
-              fontSize: 'clamp(14px,3vw,20px)',
+              fontSize: 'clamp(18px,3vw,26px)',
               color: 'var(--text)',
               letterSpacing: '1px',
-              marginBottom: '8px',
+              marginBottom: '10px',
             }}>
               LEARN AI.
             </span>
             <span style={{
               display: 'block',
               fontFamily: 'var(--pixel-font)',
-              fontSize: 'clamp(14px,3vw,20px)',
+              fontSize: 'clamp(18px,3vw,26px)',
               color: 'var(--accent)',
               textShadow: '0 0 12px var(--accent-glow), 0 0 36px rgba(232,108,44,0.3)',
               letterSpacing: '1px',
@@ -148,7 +148,7 @@ export default function HomePage() {
             </span>
           </h1>
 
-          <p style={{ fontSize: '14px', color: 'var(--text-muted)', maxWidth: '440px', margin: '0 auto 36px', lineHeight: 1.75 }}>
+          <p style={{ fontSize: '16px', color: 'var(--text-muted)', maxWidth: '480px', margin: '0 auto 36px', lineHeight: 1.75 }}>
             260+ lessons across 20 phases. From linear algebra to autonomous agent swarms.
             Python, TypeScript, Rust, Julia.
           </p>
@@ -164,7 +164,7 @@ export default function HomePage() {
               <div key={i} style={{ textAlign: 'center' }}>
                 <div style={{
                   fontFamily: 'var(--pixel-font)',
-                  fontSize: 'clamp(12px,2.5vw,18px)',
+                  fontSize: 'clamp(16px,2.5vw,22px)',
                   color: i === 3 && userDone > 0 ? 'var(--complete)' : 'var(--accent)',
                   textShadow: i === 3 && userDone > 0
                     ? '0 0 10px var(--complete-glow)'
@@ -174,7 +174,7 @@ export default function HomePage() {
                 }}>
                   {s.anim ? <Counter to={s.val} /> : s.val}{s.suffix}
                 </div>
-                <div style={{ fontFamily: 'var(--pixel-font)', fontSize: '7px', color: 'var(--text-dim)', letterSpacing: '1px' }}>
+                <div style={{ fontFamily: 'var(--pixel-font)', fontSize: '10px', color: 'var(--text-dim)', letterSpacing: '1px' }}>
                   {s.label}
                 </div>
               </div>
@@ -195,7 +195,7 @@ export default function HomePage() {
         <div className="ticker-track">
           {TICKS.map((t, i) => (
             <span key={i} style={{
-              fontSize: '9px', fontFamily: 'var(--pixel-font)',
+              fontSize: '11px', fontFamily: 'var(--pixel-font)',
               color: 'var(--text-dim)', padding: '10px 0',
               display: 'inline-flex', alignItems: 'center',
             }}>
@@ -220,7 +220,7 @@ export default function HomePage() {
                 THE 20 PHASES
               </span>
             </div>
-            <span style={{ fontSize: '7px', color: 'var(--text-dim)', fontFamily: 'var(--pixel-font)' }}>
+            <span style={{ fontSize: '10px', color: 'var(--text-dim)', fontFamily: 'var(--pixel-font)' }}>
               CLICK TO EXPLORE →
             </span>
           </div>
@@ -240,11 +240,27 @@ export default function HomePage() {
               const langs = phaseLangs(phase);
 
               return (
-                <div key={phase.id} className="phase-card" onClick={() => setSel(idx)}
-                  style={{ padding: '16px' }}>
+                <button key={phase.id} onClick={() => setSel(idx)}
+                  style={{
+                    display: 'block', width: '100%', padding: '16px',
+                    background: 'var(--bg-card)', border: '1px solid var(--border)',
+                    cursor: 'pointer', textAlign: 'left', boxSizing: 'border-box',
+                    transition: 'border-color 0.15s, box-shadow 0.15s, background 0.15s',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = 'var(--bg-card-hover)';
+                    e.currentTarget.style.borderColor = 'var(--accent)';
+                    e.currentTarget.style.boxShadow = '0 0 12px var(--accent-glow)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = 'var(--bg-card)';
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
                   {/* phase number */}
                   <div style={{
-                    fontFamily: 'var(--pixel-font)', fontSize: '8px',
+                    fontFamily: 'var(--pixel-font)', fontSize: '10px',
                     color: 'var(--accent)',
                     textShadow: pct === 100 ? '0 0 8px var(--complete-glow)' : '0 0 6px var(--accent-glow)',
                     marginBottom: '8px', letterSpacing: '0.5px',
@@ -261,7 +277,7 @@ export default function HomePage() {
                   <SegBar pct={pct} />
 
                   {/* lesson count */}
-                  <div style={{ fontSize: '10px', color: 'var(--text-dim)', marginTop: '6px', marginBottom: '8px', fontFamily: 'var(--mono-font)' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-dim)', marginTop: '6px', marginBottom: '8px', fontFamily: 'var(--mono-font)' }}>
                     {mounted && prog.completed > 0
                       ? <span><span style={{ color: 'var(--complete)', textShadow: '0 0 6px var(--complete-glow)' }}>{prog.completed}</span>/{phase.lessons.length}</span>
                       : `${phase.lessons.length} lessons`
@@ -274,7 +290,7 @@ export default function HomePage() {
                       const c = LANG_CLR[l] ?? { bg: 'var(--bg)', color: 'var(--text-dim)', glow: 'transparent' };
                       return (
                         <span key={l} style={{
-                          fontSize: '9px', padding: '1px 6px',
+                          fontSize: '11px', padding: '2px 8px',
                           background: c.bg, color: c.color,
                           border: `1px solid ${c.color}22`,
                         }}>
@@ -283,7 +299,7 @@ export default function HomePage() {
                       );
                     })}
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -323,7 +339,7 @@ export default function HomePage() {
 
           {/* overall bar */}
           <div style={{ marginBottom: '24px', paddingLeft: '13px' }}>
-            <div style={{ fontSize: '11px', color: 'var(--text-dim)', marginBottom: '6px', fontFamily: 'var(--mono-font)' }}>
+            <div style={{ fontSize: '14px', color: 'var(--text-dim)', marginBottom: '6px', fontFamily: 'var(--mono-font)' }}>
               overall progress — {userDone}/{total} lessons
               {mounted && overallPct > 0 && (
                 <span style={{ color: 'var(--accent)', marginLeft: '8px', textShadow: '0 0 6px var(--accent-glow)' }}>
@@ -356,8 +372,8 @@ export default function HomePage() {
                     background: done ? 'var(--complete)' : 'var(--planned)',
                     boxShadow: done ? '0 0 6px var(--complete-glow)' : 'none',
                   }} />
-                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--mono-font)' }}>
-                    <span style={{ color: 'var(--text-dim)', marginRight: '4px' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--mono-font)' }}>
+                    <span style={{ color: 'var(--text-dim)', marginRight: '6px' }}>
                       {String(phase.id).padStart(2,'0')}
                     </span>
                     {phase.name}
@@ -392,18 +408,18 @@ export default function HomePage() {
             }} />
           ))}
 
-          <div style={{ fontFamily: 'var(--pixel-font)', fontSize: '12px', color: 'var(--accent)', textShadow: '0 0 12px var(--accent-glow)', marginBottom: '10px' }}>
+          <div style={{ fontFamily: 'var(--pixel-font)', fontSize: '15px', color: 'var(--accent)', textShadow: '0 0 12px var(--accent-glow)', marginBottom: '10px' }}>
             START BUILDING
           </div>
-          <p style={{ fontSize: '13px', color: 'var(--text-dim)', marginBottom: '20px' }}>
+          <p style={{ fontSize: '16px', color: 'var(--text-dim)', marginBottom: '20px' }}>
             Everything is open source and free. No account required.
           </p>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '12px',
             background: 'var(--code-bg)', border: '1px solid var(--border)',
             borderLeft: '3px solid var(--accent)',
-            padding: '10px 16px', marginBottom: '24px',
-            fontFamily: 'var(--mono-font)', fontSize: '12px', color: 'var(--accent)',
+            padding: '12px 20px', marginBottom: '24px',
+            fontFamily: 'var(--mono-font)', fontSize: '15px', color: 'var(--accent)',
             textShadow: '0 0 8px rgba(232,108,44,0.3)',
           }}>
             git clone https://github.com/cookie-may/felixforlearnai

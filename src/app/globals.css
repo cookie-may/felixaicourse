@@ -155,8 +155,8 @@ body::after {
 
 /* ─── Fade up ───────────────────────────────────────────────── */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 .fade-up { animation: fadeUp 0.45s ease forwards; }
 
@@ -369,10 +369,10 @@ body::after {
 
 /* ─── Page entry animation ───────────────────────────────────── */
 @keyframes pageIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-main > * { animation: pageIn 0.4s ease forwards; }
+main > * { animation: pageIn 0.3s ease forwards; }
 
 /* ─── Mermaid diagram wrapper ────────────────────────────────── */
 .mermaid-wrap {
