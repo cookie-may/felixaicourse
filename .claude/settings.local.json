@@ -4,7 +4,14 @@
       "Bash(xargs ls *)",
       "Bash(npm run *)",
       "Bash(npx tsc *)",
-      "Bash(pkill -f \"next dev\")"
+      "Bash(pkill -f \"next dev\")",
+      "Bash(npm list *)",
+      "Bash(npm install *)",
+      "Bash(git filter-branch -f --env-filter ' *)",
+      "Bash(git stash *)",
+      "Bash(pnpm add *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

@@ -202,8 +202,8 @@ export default function CatalogPage() {
                             color: 'var(--text)', textDecoration: 'none',
                             fontWeight: 500,
                           }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--accent)'; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text)'; }}
+                          onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => { e.currentTarget.style.color = 'var(--accent)'; }}
+                          onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => { e.currentTarget.style.color = 'var(--text)'; }}
                         >
                           {lesson.name}
                         </Link>

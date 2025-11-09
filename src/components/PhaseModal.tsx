@@ -192,7 +192,11 @@ export default function PhaseModal({ phase, onClose }: Props) {
                     {lesson.type.toUpperCase()}
                   </span>
                   {canRead && (
-                    <span style={{ fontSize: '9px', color: done ? 'var(--complete)' : 'var(--text-dim)', fontFamily: 'var(--pixel-font)', flexShrink: 0 }}>
+                    <span style={{
+                      fontSize: '11px', fontFamily: 'var(--pixel-font)', flexShrink: 0,
+                      color: done ? 'var(--complete)' : '#ffffff',
+                      textShadow: done ? '0 0 6px var(--complete-glow)' : '0 0 4px rgba(255,255,255,0.4)',
+                    }}>
                       {done ? '✓' : '▶'}
                     </span>
                   )}
@@ -201,15 +205,17 @@ export default function PhaseModal({ phase, onClose }: Props) {
                       onClick={ev => { ev.stopPropagation(); done ? markIncomplete(key) : markComplete(key); }}
                       title={done ? 'Mark incomplete' : 'Mark complete'}
                       style={{
-                        width: '17px', height: '17px', flexShrink: 0,
-                        background: done ? 'var(--complete)' : 'transparent',
-                        border: `1px solid ${done ? 'var(--complete)' : 'var(--border)'}`,
+                        width: '20px', height: '20px', flexShrink: 0,
+                        background: done ? 'var(--complete)' : 'rgba(255,255,255,0.08)',
+                        border: `1px solid ${done ? 'var(--complete)' : 'rgba(255,255,255,0.35)'}`,
                         cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '8px', color: done ? '#0b0806' : 'var(--text-dim)',
+                        fontSize: '10px', color: done ? '#0b0806' : '#ffffff',
+                        fontWeight: 700,
+                        boxShadow: done ? '0 0 6px var(--complete-glow)' : 'none',
                         transition: 'all 0.15s',
                       }}
-                      onMouseEnter={e => { if (!done) { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; } }}
-                      onMouseLeave={e => { if (!done) { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-dim)'; } }}
+                      onMouseEnter={e => { if (!done) { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'rgba(232,108,44,0.12)'; } }}
+                      onMouseLeave={e => { if (!done) { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)'; e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; } }}
                     >
                       {done ? '✓' : '□'}
                     </button>
