@@ -1,5 +1,5 @@
-// Auto-generated data - all 20 phases with 272+ lessons
-// Source: https://github.com/rohitg00/ai-engineering-from-scratch
+// Felix Learning Platform - Core curriculum data structure
+// Built with AI-first methodology: Learn, Build, Ship
 
 export interface Lesson {
   name: string;

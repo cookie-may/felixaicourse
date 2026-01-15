@@ -6,8 +6,12 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'Felix — AI Engineering from Scratch',
-  description: '272+ lessons across 20 phases. Build neural networks, transformers, and LLMs from first principles. Python, TypeScript, Rust, Julia.',
+  title: 'Felix | AI Engineering Learning Platform',
+  description: '20 phases from math foundations to autonomous agent swarms. 272+ lessons. Learn AI with AI, then build and ship real tools.',
+  keywords: ['AI', 'Machine Learning', 'Deep Learning', 'LLM', 'Transformers', 'Agent Engineering', 'Learn by Building'],
+  authors: [{ name: 'Felix Learning', url: 'https://felixforlearnai.com' }],
+  creator: 'Felix Learning',
+  publisher: 'Felix Learning',
   icons: { icon: '/logo.png', apple: '/logo.png' },
 };
 

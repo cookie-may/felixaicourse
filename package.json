@@ -1,12 +1,23 @@
 {
-  "name": "slafai",
-  "version": "0.1.0",
+  "name": "@felix-learn-ai/core",
+  "version": "1.0.0",
   "private": true,
+  "description": "Felix - The AI-native learning platform for engineering intelligence from first principles",
+  "author": "Felix Learning",
+  "license": "MIT",
+  "homepage": "https://felixforlearnai.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cookie-may/felixforlearnai"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "validate": "node scripts/validate.mjs",
+    "analyze": "node scripts/analyze.mjs",
+    "generate": "node scripts/generate.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.0",
@@ -28,5 +39,19 @@
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.3.3"
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "keywords": [
+    "ai",
+    "machine-learning",
+    "deep-learning",
+    "education",
+    "learn-by-building",
+    "transformers",
+    "llm",
+    "agents"
+  ]
 }

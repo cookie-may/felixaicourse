@@ -40,3 +40,9 @@ coverage/
 --store-dir
 *.tsbuildinfo
 next-env.d.ts
+
+# Felix Learning Platform
+.felix-progress.json
+curriculum.json
+study-plan.json
+scripts/output/
