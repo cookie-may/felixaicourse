@@ -1,240 +1,384 @@
+#!/usr/bin/env python3
+"""
+Felix Learning Platform - Model Evaluation Module
+Comprehensive metrics and validation strategies for ML models
+Author: Felix Learning
+License: MIT
+
+This module provides tools for evaluating machine learning models
+including classification metrics, regression metrics, and cross-validation.
+"""
+
 import random
 import math
+from typing import List, Tuple, Callable, Dict, Optional, Any
+from dataclasses import dataclass
+from enum import Enum
 
 
-def train_val_test_split(X, y, train_ratio=0.6, val_ratio=0.2, seed=42):
-    random.seed(seed)
-    n = len(X)
-    indices = list(range(n))
-    random.shuffle(indices)
-
-    train_end = int(n * train_ratio)
-    val_end = int(n * (train_ratio + val_ratio))
-
-    train_idx = indices[:train_end]
-    val_idx = indices[train_end:val_end]
-    test_idx = indices[val_end:]
-
-    X_train = [X[i] for i in train_idx]
-    y_train = [y[i] for i in train_idx]
-    X_val = [X[i] for i in val_idx]
-    y_val = [y[i] for i in val_idx]
-    X_test = [X[i] for i in test_idx]
-    y_test = [y[i] for i in test_idx]
-
-    return X_train, y_train, X_val, y_val, X_test, y_test
+class SplitStrategy(Enum):
+    """Data splitting strategies"""
+    STANDARD = "standard"
+    STRATIFIED = "stratified"
+    K_FOLD = "k_fold"
+    STRATIFIED_K_FOLD = "stratified_k_fold"
 
 
-def kfold_split(n, k=5, seed=42):
-    random.seed(seed)
-    indices = list(range(n))
-    random.shuffle(indices)
-
-    fold_size = n // k
-    folds = []
-
-    for i in range(k):
-        start = i * fold_size
-        end = start + fold_size if i < k - 1 else n
-        val_idx = indices[start:end]
-        train_idx = indices[:start] + indices[end:]
-        folds.append((train_idx, val_idx))
-
-    return folds
+@dataclass
+class EvaluationResult:
+    """Container for evaluation metrics"""
+    accuracy: float
+    precision: float
+    recall: float
+    f1_score: float
+    metrics: Dict[str, float]
 
 
-def stratified_kfold_split(y, k=5, seed=42):
-    random.seed(seed)
+class DataSplitter:
+    """Handles train/validation/test splitting"""
 
-    class_indices = {}
-    for i, label in enumerate(y):
-        class_indices.setdefault(label, []).append(i)
+    @staticmethod
+    def holdout_split(
+        features: List[Any],
+        targets: List[Any],
+        train_ratio: float = 0.6,
+        val_ratio: float = 0.2,
+        seed: int = 42
+    ) -> Tuple[List[Any], List[Any], List[Any], List[Any], List[Any], List[Any]]:
+        """Split data into train, validation, and test sets"""
+        random.seed(seed)
+        n = len(features)
+        indices = list(range(n))
+        random.shuffle(indices)
 
-    for label in class_indices:
-        random.shuffle(class_indices[label])
+        train_end = int(n * train_ratio)
+        val_end = int(n * (train_ratio + val_ratio))
 
-    folds = [{"train": [], "val": []} for _ in range(k)]
+        train_idx = indices[:train_end]
+        val_idx = indices[train_end:val_end]
+        test_idx = indices[val_end:]
 
-    for label, indices in class_indices.items():
-        fold_size = len(indices) // k
+        X_train = [features[i] for i in train_idx]
+        y_train = [targets[i] for i in train_idx]
+        X_val = [features[i] for i in val_idx]
+        y_val = [targets[i] for i in val_idx]
+        X_test = [features[i] for i in test_idx]
+        y_test = [targets[i] for i in test_idx]
+
+        return X_train, y_train, X_val, y_val, X_test, y_test
+
+    @staticmethod
+    def k_fold_split(n: int, k: int = 5, seed: int = 42) -> List[Tuple[List[int], List[int]]]:
+        """Create k folds for cross-validation"""
+        random.seed(seed)
+        indices = list(range(n))
+        random.shuffle(indices)
+
+        fold_size = n // k
+        folds = []
+
         for i in range(k):
             start = i * fold_size
-            end = start + fold_size if i < k - 1 else len(indices)
-            val_part = indices[start:end]
-            train_part = indices[:start] + indices[end:]
-            folds[i]["val"].extend(val_part)
-            folds[i]["train"].extend(train_part)
+            end = start + fold_size if i < k - 1 else n
+            val_idx = indices[start:end]
+            train_idx = indices[:start] + indices[end:]
+            folds.append((train_idx, val_idx))
 
-    return [(f["train"], f["val"]) for f in folds]
+        return folds
+
+    @staticmethod
+    def stratified_k_fold_split(
+        targets: List[int],
+        k: int = 5,
+        seed: int = 42
+    ) -> List[Tuple[List[int], List[int]]]:
+        """Create stratified k folds maintaining class distribution"""
+        random.seed(seed)
+
+        class_indices = {}
+        for i, label in enumerate(targets):
+            class_indices.setdefault(label, []).append(i)
+
+        for label in class_indices:
+            random.shuffle(class_indices[label])
+
+        folds = [{"train": [], "val": []} for _ in range(k)]
+
+        for label, indices in class_indices.items():
+            fold_size = len(indices) // k
+            for i in range(k):
+                start = i * fold_size
+                end = start + fold_size if i < k - 1 else len(indices)
+                val_part = indices[start:end]
+                train_part = indices[:start] + indices[end:]
+                folds[i]["val"].extend(val_part)
+                folds[i]["train"].extend(train_part)
+
+        return [(f["train"], f["val"]) for f in folds]
 
 
-def cross_validate(X, y, model_fn, k=5, metric_fn=None, stratified=False):
-    n = len(X)
+class BinaryClassificationMetrics:
+    """Compute binary classification metrics from predictions"""
 
-    if stratified:
-        folds = stratified_kfold_split(y, k)
-    else:
-        folds = kfold_split(n, k)
+    def __init__(self, true_labels: List[int], predicted_labels: List[int]):
+        self.true_positives = sum(1 for t, p in zip(true_labels, predicted_labels) if t == 1 and p == 1)
+        self.true_negatives = sum(1 for t, p in zip(true_labels, predicted_labels) if t == 0 and p == 0)
+        self.false_positives = sum(1 for t, p in zip(true_labels, predicted_labels) if t == 0 and p == 1)
+        self.false_negatives = sum(1 for t, p in zip(true_labels, predicted_labels) if t == 1 and p == 0)
 
-    scores = []
-    for train_idx, val_idx in folds:
-        X_train = [X[i] for i in train_idx]
-        y_train = [y[i] for i in train_idx]
-        X_val = [X[i] for i in val_idx]
-        y_val = [y[i] for i in val_idx]
+    def compute_accuracy(self) -> float:
+        """Overall accuracy"""
+        total = self.true_positives + self.true_negatives + self.false_positives + self.false_negatives
+        return (self.true_positives + self.true_negatives) / total if total > 0 else 0.0
 
-        model = model_fn()
-        model.fit(X_train, y_train)
-        predictions = [model.predict(x) for x in X_val]
+    def compute_precision(self) -> float:
+        """Positive predictive value"""
+        denom = self.true_positives + self.false_positives
+        return self.true_positives / denom if denom > 0 else 0.0
 
-        if metric_fn:
-            score = metric_fn(y_val, predictions)
+    def compute_recall(self) -> float:
+        """True positive rate"""
+        denom = self.true_positives + self.false_negatives
+        return self.true_positives / denom if denom > 0 else 0.0
+
+    def compute_f1(self) -> float:
+        """Harmonic mean of precision and recall"""
+        p = self.compute_precision()
+        r = self.compute_recall()
+        return 2 * p * r / (p + r) if (p + r) > 0 else 0.0
+
+
+class RegressionMetrics:
+    """Compute regression evaluation metrics"""
+
+    @staticmethod
+    def mean_squared_error(true_values: List[float], predicted: List[float]) -> float:
+        """MSE loss"""
+        n = len(true_values)
+        return sum((yt - yp) ** 2 for yt, yp in zip(true_values, predicted)) / n
+
+    @staticmethod
+    def root_mse(true_values: List[float], predicted: List[float]) -> float:
+        """RMSE metric"""
+        return math.sqrt(RegressionMetrics.mean_squared_error(true_values, predicted))
+
+    @staticmethod
+    def mean_absolute_error(true_values: List[float], predicted: List[float]) -> float:
+        """MAE metric"""
+        n = len(true_values)
+        return sum(abs(yt - yp) for yt, yp in zip(true_values, predicted)) / n
+
+    @staticmethod
+    def r_squared(true_values: List[float], predicted: List[float]) -> float:
+        """Coefficient of determination"""
+        mean_y = sum(true_values) / len(true_values)
+        ss_residual = sum((yt - yp) ** 2 for yt, yp in zip(true_values, predicted))
+        ss_total = sum((yt - mean_y) ** 2 for yt in true_values)
+
+        if ss_total == 0:
+            return 0.0
+        return 1.0 - ss_residual / ss_total
+
+
+class ROCCurveCalculator:
+    """Compute ROC curve and AUC-ROC metric"""
+
+    @staticmethod
+    def compute_curve(
+        true_labels: List[int],
+        prediction_scores: List[float]
+    ) -> Tuple[List[float], List[float], List[float]]:
+        """Calculate ROC curve points"""
+        thresholds = sorted(set(prediction_scores), reverse=True)
+        tpr_values = []
+        fpr_values = []
+
+        total_positives = sum(true_labels)
+        total_negatives = len(true_labels) - total_positives
+
+        for threshold in thresholds:
+            predictions = [1 if s >= threshold else 0 for s in prediction_scores]
+            tp = sum(1 for yt, yp in zip(true_labels, predictions) if yt == 1 and yp == 1)
+            fp = sum(1 for yt, yp in zip(true_labels, predictions) if yt == 0 and yp == 1)
+
+            tpr = tp / total_positives if total_positives > 0 else 0.0
+            fpr = fp / total_negatives if total_negatives > 0 else 0.0
+
+            tpr_values.append(tpr)
+            fpr_values.append(fpr)
+
+        return fpr_values, tpr_values, thresholds
+
+    @staticmethod
+    def compute_auc(true_labels: List[int], prediction_scores: List[float]) -> float:
+        """Calculate area under ROC curve"""
+        fpr_list, tpr_list, _ = ROCCurveCalculator.compute_curve(true_labels, prediction_scores)
+
+        pairs = sorted(zip(fpr_list, tpr_list))
+        fpr_sorted = [p[0] for p in pairs]
+        tpr_sorted = [p[1] for p in pairs]
+
+        area = 0.0
+        for i in range(1, len(fpr_sorted)):
+            width = fpr_sorted[i] - fpr_sorted[i - 1]
+            height = (tpr_sorted[i] + tpr_sorted[i - 1]) / 2
+            area += width * height
+
+        return area
+
+
+class CrossValidator:
+    """Perform cross-validation for model evaluation"""
+
+    def __init__(
+        self,
+        model_factory: Callable[[], Any],
+        metric_function: Callable[[List[int], List[int]], float],
+        k_folds: int = 5,
+        stratified: bool = False
+    ):
+        self.model_factory = model_factory
+        self.metric_fn = metric_function
+        self.k = k_folds
+        self.stratified = stratified
+
+    def validate(
+        self,
+        features: List[Any],
+        targets: List[int]
+    ) -> Tuple[List[float], float, float]:
+        """Run cross-validation and return scores"""
+        n = len(features)
+
+        if self.stratified:
+            folds = DataSplitter.stratified_k_fold_split(targets, self.k)
         else:
-            score = sum(1 for yt, yp in zip(y_val, predictions) if yt == yp) / len(y_val)
-        scores.append(score)
+            folds = DataSplitter.k_fold_split(n, self.k)
 
-    return scores
+        scores = []
+        for fold_idx, (train_idx, val_idx) in enumerate(folds):
+            X_train = [features[i] for i in train_idx]
+            y_train = [targets[i] for i in train_idx]
+            X_val = [features[i] for i in val_idx]
+            y_val = [targets[i] for i in val_idx]
 
+            model = self.model_factory()
+            model.fit(X_train, y_train)
+            predictions = [model.predict(x) for x in X_val]
 
-def confusion_matrix(y_true, y_pred):
-    tp = sum(1 for yt, yp in zip(y_true, y_pred) if yt == 1 and yp == 1)
-    tn = sum(1 for yt, yp in zip(y_true, y_pred) if yt == 0 and yp == 0)
-    fp = sum(1 for yt, yp in zip(y_true, y_pred) if yt == 0 and yp == 1)
-    fn = sum(1 for yt, yp in zip(y_true, y_pred) if yt == 1 and yp == 0)
-    return tp, tn, fp, fn
+            score = self.metric_fn(y_val, predictions)
+            scores.append(score)
 
+        mean_score = sum(scores) / len(scores)
+        variance = sum((s - mean_score) ** 2 for s in scores) / len(scores)
+        std_score = math.sqrt(variance)
 
-def accuracy(y_true, y_pred):
-    tp, tn, fp, fn = confusion_matrix(y_true, y_pred)
-    total = tp + tn + fp + fn
-    return (tp + tn) / total if total > 0 else 0.0
-
-
-def precision(y_true, y_pred):
-    tp, tn, fp, fn = confusion_matrix(y_true, y_pred)
-    return tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        return scores, mean_score, std_score
 
 
-def recall(y_true, y_pred):
-    tp, tn, fp, fn = confusion_matrix(y_true, y_pred)
-    return tp / (tp + fn) if (tp + fn) > 0 else 0.0
+class LearningCurveAnalyzer:
+    """Analyze learning curves for model behavior"""
+
+    @staticmethod
+    def generate_curve(
+        features: List[Any],
+        targets: List[int],
+        model_factory: Callable[[], Any],
+        metric_fn: Callable[[List[int], List[int]], float],
+        train_ratios: Optional[List[float]] = None,
+        val_ratio: float = 0.2,
+        seed: int = 42
+    ) -> Tuple[List[int], List[float], List[float]]:
+        """Generate learning curve data points"""
+        random.seed(seed)
+        n = len(features)
+        indices = list(range(n))
+        random.shuffle(indices)
+
+        val_size = int(n * val_ratio)
+        val_idx = indices[:val_size]
+        pool_idx = indices[val_size:]
+
+        X_val = [features[i] for i in val_idx]
+        y_val = [targets[i] for i in val_idx]
+
+        if train_ratios is None:
+            pool_size = len(pool_idx)
+            train_ratios = [int(pool_size * r) for r in [0.1, 0.2, 0.4, 0.6, 0.8, 1.0]]
+
+        train_scores = []
+        val_scores = []
+
+        for size in train_ratios:
+            subset = pool_idx[:size]
+            X_train = [features[i] for i in subset]
+            y_train = [targets[i] for i in subset]
+
+            model = model_factory()
+            model.fit(X_train, y_train)
+
+            train_pred = [model.predict(x) for x in X_train]
+            val_pred = [model.predict(x) for x in X_val]
+
+            train_scores.append(metric_fn(y_train, train_pred))
+            val_scores.append(metric_fn(y_val, val_pred))
+
+        return train_ratios, train_scores, val_scores
 
 
-def f1_score(y_true, y_pred):
-    p = precision(y_true, y_pred)
-    r = recall(y_true, y_pred)
-    return 2 * p * r / (p + r) if (p + r) > 0 else 0.0
+class ImbalanceAnalyzer:
+    """Analyze behavior on imbalanced datasets"""
+
+    @staticmethod
+    def compute_class_distributions(labels: List[int]) -> Dict[int, int]:
+        """Count samples per class"""
+        counts = {}
+        for label in labels:
+            counts[label] = counts.get(label, 0) + 1
+        return counts
+
+    @staticmethod
+    def analyze_baseline_performance(
+        true_labels: List[int],
+        predictions: List[int]
+    ) -> Dict[str, float]:
+        """Compare model against trivial baselines"""
+        positive_count = sum(true_labels)
+        negative_count = len(true_labels) - positive_count
+
+        always_positive = [1] * len(true_labels)
+        always_negative = [0] * len(true_labels)
+
+        metrics = {}
+
+        # Model performance
+        model_metrics = BinaryClassificationMetrics(true_labels, predictions)
+        metrics['model_accuracy'] = model_metrics.compute_accuracy()
+        metrics['model_precision'] = model_metrics.compute_precision()
+        metrics['model_recall'] = model_metrics.compute_recall()
+        metrics['model_f1'] = model_metrics.compute_f1()
+
+        # Trivial baselines
+        neg_metrics = BinaryClassificationMetrics(true_labels, always_negative)
+        pos_metrics = BinaryClassificationMetrics(true_labels, always_positive)
+
+        metrics['negative_baseline_accuracy'] = neg_metrics.compute_accuracy()
+        metrics['positive_baseline_accuracy'] = pos_metrics.compute_accuracy()
+
+        return metrics
 
 
-def roc_curve(y_true, y_scores):
-    thresholds = sorted(set(y_scores), reverse=True)
-    tpr_list = []
-    fpr_list = []
+# Demo models for cross-validation
+class SimpleLogisticModel:
+    """Simple logistic regression for demonstration"""
 
-    total_positives = sum(y_true)
-    total_negatives = len(y_true) - total_positives
-
-    for threshold in thresholds:
-        y_pred = [1 if s >= threshold else 0 for s in y_scores]
-        tp = sum(1 for yt, yp in zip(y_true, y_pred) if yt == 1 and yp == 1)
-        fp = sum(1 for yt, yp in zip(y_true, y_pred) if yt == 0 and yp == 1)
-
-        tpr = tp / total_positives if total_positives > 0 else 0.0
-        fpr = fp / total_negatives if total_negatives > 0 else 0.0
-
-        tpr_list.append(tpr)
-        fpr_list.append(fpr)
-
-    return fpr_list, tpr_list, thresholds
-
-
-def auc_roc(y_true, y_scores):
-    fpr_list, tpr_list, _ = roc_curve(y_true, y_scores)
-
-    pairs = sorted(zip(fpr_list, tpr_list))
-    fpr_sorted = [p[0] for p in pairs]
-    tpr_sorted = [p[1] for p in pairs]
-
-    area = 0.0
-    for i in range(1, len(fpr_sorted)):
-        width = fpr_sorted[i] - fpr_sorted[i - 1]
-        height = (tpr_sorted[i] + tpr_sorted[i - 1]) / 2
-        area += width * height
-
-    return area
-
-
-def mse(y_true, y_pred):
-    n = len(y_true)
-    return sum((yt - yp) ** 2 for yt, yp in zip(y_true, y_pred)) / n
-
-
-def rmse(y_true, y_pred):
-    return math.sqrt(mse(y_true, y_pred))
-
-
-def mae(y_true, y_pred):
-    n = len(y_true)
-    return sum(abs(yt - yp) for yt, yp in zip(y_true, y_pred)) / n
-
-
-def r_squared(y_true, y_pred):
-    mean_y = sum(y_true) / len(y_true)
-    ss_res = sum((yt - yp) ** 2 for yt, yp in zip(y_true, y_pred))
-    ss_tot = sum((yt - mean_y) ** 2 for yt in y_true)
-    if ss_tot == 0:
-        return 0.0
-    return 1.0 - ss_res / ss_tot
-
-
-def learning_curve(X, y, model_fn, metric_fn, train_sizes=None, val_ratio=0.2, seed=42):
-    random.seed(seed)
-    n = len(X)
-    indices = list(range(n))
-    random.shuffle(indices)
-
-    val_size = int(n * val_ratio)
-    val_idx = indices[:val_size]
-    pool_idx = indices[val_size:]
-
-    X_val = [X[i] for i in val_idx]
-    y_val = [y[i] for i in val_idx]
-
-    if train_sizes is None:
-        train_sizes = [int(len(pool_idx) * r) for r in [0.1, 0.2, 0.4, 0.6, 0.8, 1.0]]
-
-    train_scores = []
-    val_scores = []
-
-    for size in train_sizes:
-        subset = pool_idx[:size]
-        X_train = [X[i] for i in subset]
-        y_train = [y[i] for i in subset]
-
-        model = model_fn()
-        model.fit(X_train, y_train)
-
-        train_pred = [model.predict(x) for x in X_train]
-        val_pred = [model.predict(x) for x in X_val]
-
-        train_scores.append(metric_fn(y_train, train_pred))
-        val_scores.append(metric_fn(y_val, val_pred))
-
-    return train_sizes, train_scores, val_scores
-
-
-class SimpleLogistic:
-    def __init__(self, lr=0.1, epochs=100):
+    def __init__(self, lr: float = 0.1, epochs: int = 100):
         self.lr = lr
         self.epochs = epochs
         self.weights = None
         self.bias = 0.0
 
-    def sigmoid(self, z):
-        z = max(-500, min(500, z))
-        return 1.0 / (1.0 + math.exp(-z))
-
-    def fit(self, X, y):
+    def fit(self, X: List[List[float]], y: List[int]) -> 'SimpleLogisticModel':
         n_features = len(X[0])
         self.weights = [0.0] * n_features
         self.bias = 0.0
@@ -242,28 +386,29 @@ class SimpleLogistic:
         for _ in range(self.epochs):
             for xi, yi in zip(X, y):
                 z = sum(w * x for w, x in zip(self.weights, xi)) + self.bias
-                pred = self.sigmoid(z)
+                pred = 1.0 / (1.0 + math.exp(-max(-500, min(500, z))))
                 error = yi - pred
                 for j in range(n_features):
                     self.weights[j] += self.lr * error * xi[j]
                 self.bias += self.lr * error
 
-    def predict_proba(self, x):
+        return self
+
+    def predict(self, x: List[float]) -> int:
         z = sum(w * xi for w, xi in zip(self.weights, x)) + self.bias
-        return self.sigmoid(z)
-
-    def predict(self, x):
-        return 1 if self.predict_proba(x) >= 0.5 else 0
+        return 1 if z >= 0 else 0
 
 
-class SimpleLinearRegression:
-    def __init__(self, lr=0.001, epochs=200):
+class SimpleLinearModel:
+    """Simple linear regression for demonstration"""
+
+    def __init__(self, lr: float = 0.001, epochs: int = 200):
         self.lr = lr
         self.epochs = epochs
         self.weights = None
         self.bias = 0.0
 
-    def fit(self, X, y):
+    def fit(self, X: List[List[float]], y: List[float]) -> 'SimpleLinearModel':
         n_features = len(X[0])
         self.weights = [0.0] * n_features
         self.bias = 0.0
@@ -277,48 +422,51 @@ class SimpleLinearRegression:
                     self.weights[j] += self.lr * error * xi[j] / n
                 self.bias += self.lr * error / n
 
-    def predict(self, x):
+        return self
+
+    def predict(self, x: List[float]) -> float:
         return sum(w * xi for w, xi in zip(self.weights, x)) + self.bias
 
 
-def standardize(values):
-    n = len(values)
-    mean = sum(values) / n
-    var = sum((v - mean) ** 2 for v in values) / n
-    std = math.sqrt(var) if var > 0 else 1.0
-    return [(v - mean) / std for v in values], mean, std
-
-
-def make_classification_data(n=300, seed=42):
+# Data generators
+def generate_classification_data(n: int = 300, seed: int = 42) -> Tuple[List[List[float]], List[int]]:
+    """Generate synthetic classification data"""
     random.seed(seed)
     X = []
     y = []
+
     for _ in range(n):
         x1 = random.gauss(0, 1)
         x2 = random.gauss(0, 1)
         label = 1 if (x1 + x2 + random.gauss(0, 0.5)) > 0 else 0
         X.append([x1, x2])
         y.append(label)
+
     return X, y
 
 
-def make_regression_data(n=200, seed=42):
+def generate_regression_data(n: int = 200, seed: int = 42) -> Tuple[List[List[float]], List[float]]:
+    """Generate synthetic regression data"""
     random.seed(seed)
     X = []
     y = []
+
     for _ in range(n):
         x1 = random.uniform(0, 10)
         x2 = random.uniform(0, 5)
         target = 3 * x1 + 2 * x2 + random.gauss(0, 2)
         X.append([x1, x2])
         y.append(target)
+
     return X, y
 
 
-def make_imbalanced_data(n=300, minority_ratio=0.05, seed=42):
+def generate_imbalanced_data(n: int = 300, minority_ratio: float = 0.05, seed: int = 42) -> Tuple[List[List[float]], List[int]]:
+    """Generate imbalanced classification data"""
     random.seed(seed)
     X = []
     y = []
+
     for _ in range(n):
         if random.random() < minority_ratio:
             x1 = random.gauss(3, 0.5)
@@ -330,83 +478,95 @@ def make_imbalanced_data(n=300, minority_ratio=0.05, seed=42):
             label = 0
         X.append([x1, x2])
         y.append(label)
+
     return X, y
 
 
+def standardize(values: List[float]) -> Tuple[List[float], float, float]:
+    """Z-score standardization"""
+    n = len(values)
+    mean = sum(values) / n
+    variance = sum((v - mean) ** 2 for v in values) / n
+    std = math.sqrt(variance) if variance > 0 else 1.0
+    return [(v - mean) / std for v in values], mean, std
+
+
 if __name__ == "__main__":
-    X_clf, y_clf = make_classification_data(300)
+    print("=" * 60)
+    print("  FELIX MODEL EVALUATION DEMONSTRATION")
+    print("=" * 60)
 
-    print("=== Train/Validation/Test Split ===")
-    X_train, y_train, X_val, y_val, X_test, y_test = train_val_test_split(X_clf, y_clf)
+    # Classification evaluation
+    print("\n[1] Train/Validation/Test Split")
+    print("-" * 40)
+    X_clf, y_clf = generate_classification_data(300)
+    X_train, y_train, X_val, y_val, X_test, y_test = DataSplitter.holdout_split(X_clf, y_clf)
+
     print(f"  Train: {len(X_train)}, Val: {len(X_val)}, Test: {len(X_test)}")
-    print(f"  Train class distribution: {sum(y_train)}/{len(y_train)} positive")
-    print(f"  Val class distribution: {sum(y_val)}/{len(y_val)} positive")
+    print(f"  Train positive ratio: {sum(y_train)}/{len(y_train)}")
+    print(f"  Val positive ratio: {sum(y_val)}/{len(y_val)}")
 
-    model = SimpleLogistic(lr=0.1, epochs=200)
+    model = SimpleLogisticModel(lr=0.1, epochs=200)
     model.fit(X_train, y_train)
 
-    print("\n=== Classification Metrics ===")
+    print("\n[2] Binary Classification Metrics")
+    print("-" * 40)
     y_pred = [model.predict(x) for x in X_test]
-    tp, tn, fp, fn = confusion_matrix(y_test, y_pred)
-    print(f"  Confusion matrix: TP={tp}, TN={tn}, FP={fp}, FN={fn}")
-    print(f"  Accuracy:  {accuracy(y_test, y_pred):.4f}")
-    print(f"  Precision: {precision(y_test, y_pred):.4f}")
-    print(f"  Recall:    {recall(y_test, y_pred):.4f}")
-    print(f"  F1 Score:  {f1_score(y_test, y_pred):.4f}")
+    metrics = BinaryClassificationMetrics(y_test, y_pred)
 
-    y_scores = [model.predict_proba(x) for x in X_test]
-    auc = auc_roc(y_test, y_scores)
-    print(f"  AUC-ROC:   {auc:.4f}")
+    print(f"  Confusion: TP={metrics.true_positives}, TN={metrics.true_negatives}, FP={metrics.false_positives}, FN={metrics.false_negatives}")
+    print(f"  Accuracy:  {metrics.compute_accuracy():.4f}")
+    print(f"  Precision: {metrics.compute_precision():.4f}")
+    print(f"  Recall:    {metrics.compute_recall():.4f}")
+    print(f"  F1 Score:  {metrics.compute_f1():.4f}")
 
-    print("\n=== K-Fold Cross-Validation (K=5) ===")
-    cv_scores = cross_validate(
-        X_clf, y_clf,
-        model_fn=lambda: SimpleLogistic(lr=0.1, epochs=200),
-        k=5,
-        metric_fn=accuracy,
+    print("\n[3] K-Fold Cross-Validation (K=5)")
+    print("-" * 40)
+    cv = CrossValidator(
+        model_factory=lambda: SimpleLogisticModel(lr=0.1, epochs=200),
+        metric_function=lambda y_true, y_pred: sum(1 for yt, yp in zip(y_true, y_pred) if yt == yp) / len(y_true),
+        k_folds=5
     )
-    mean_cv = sum(cv_scores) / len(cv_scores)
-    std_cv = math.sqrt(sum((s - mean_cv) ** 2 for s in cv_scores) / len(cv_scores))
-    print(f"  Fold scores: {[round(s, 4) for s in cv_scores]}")
-    print(f"  Mean: {mean_cv:.4f} (+/- {std_cv:.4f})")
+    scores, mean_score, std_score = cv.validate(X_clf, y_clf)
+    print(f"  Fold scores: {[round(s, 4) for s in scores]}")
+    print(f"  Mean: {mean_score:.4f} (+/- {std_score:.4f})")
 
-    print("\n=== Stratified K-Fold Cross-Validation (K=5) ===")
-    strat_scores = cross_validate(
-        X_clf, y_clf,
-        model_fn=lambda: SimpleLogistic(lr=0.1, epochs=200),
-        k=5,
-        metric_fn=accuracy,
-        stratified=True,
+    print("\n[4] Stratified K-Fold Cross-Validation (K=5)")
+    print("-" * 40)
+    stratified_cv = CrossValidator(
+        model_factory=lambda: SimpleLogisticModel(lr=0.1, epochs=200),
+        metric_function=lambda y_true, y_pred: sum(1 for yt, yp in zip(y_true, y_pred) if yt == yp) / len(y_true),
+        k_folds=5,
+        stratified=True
     )
-    strat_mean = sum(strat_scores) / len(strat_scores)
-    strat_std = math.sqrt(sum((s - strat_mean) ** 2 for s in strat_scores) / len(strat_scores))
+    strat_scores, strat_mean, strat_std = stratified_cv.validate(X_clf, y_clf)
     print(f"  Fold scores: {[round(s, 4) for s in strat_scores]}")
     print(f"  Mean: {strat_mean:.4f} (+/- {strat_std:.4f})")
 
-    print("\n=== Imbalanced Data: Why Accuracy Lies ===")
-    X_imb, y_imb = make_imbalanced_data(300, minority_ratio=0.05)
-    positives = sum(y_imb)
-    print(f"  Class distribution: {positives} positive, {len(y_imb) - positives} negative ({positives/len(y_imb)*100:.1f}% positive)")
+    print("\n[5] Imbalanced Data Analysis")
+    print("-" * 40)
+    X_imb, y_imb = generate_imbalanced_data(300, minority_ratio=0.05)
+    positive_count = sum(y_imb)
+    print(f"  Class distribution: {positive_count} positive, {len(y_imb) - positive_count} negative ({positive_count/len(y_imb)*100:.1f}% positive)")
 
     always_negative = [0] * len(y_imb)
-    print(f"  Always-negative baseline:")
-    print(f"    Accuracy:  {accuracy(y_imb, always_negative):.4f}")
-    print(f"    Precision: {precision(y_imb, always_negative):.4f}")
-    print(f"    Recall:    {recall(y_imb, always_negative):.4f}")
-    print(f"    F1 Score:  {f1_score(y_imb, always_negative):.4f}")
+    neg_metrics = BinaryClassificationMetrics(y_imb, always_negative)
+    print(f"  Always-negative baseline accuracy: {neg_metrics.compute_accuracy():.4f}")
 
-    X_tr_i, y_tr_i, X_v_i, y_v_i, X_te_i, y_te_i = train_val_test_split(X_imb, y_imb)
-    model_imb = SimpleLogistic(lr=0.5, epochs=500)
+    X_tr_i, y_tr_i, X_v_i, y_v_i, X_te_i, y_te_i = DataSplitter.holdout_split(X_imb, y_imb)
+    model_imb = SimpleLogisticModel(lr=0.5, epochs=500)
     model_imb.fit(X_tr_i, y_tr_i)
     y_pred_imb = [model_imb.predict(x) for x in X_te_i]
-    print(f"\n  Trained model on imbalanced data:")
-    print(f"    Accuracy:  {accuracy(y_te_i, y_pred_imb):.4f}")
-    print(f"    Precision: {precision(y_te_i, y_pred_imb):.4f}")
-    print(f"    Recall:    {recall(y_te_i, y_pred_imb):.4f}")
-    print(f"    F1 Score:  {f1_score(y_te_i, y_pred_imb):.4f}")
 
-    print("\n=== Regression Metrics ===")
-    X_reg, y_reg = make_regression_data(200)
+    imb_metrics = BinaryClassificationMetrics(y_te_i, y_pred_imb)
+    print(f"  Trained model accuracy: {imb_metrics.compute_accuracy():.4f}")
+    print(f"  Trained model precision: {imb_metrics.compute_precision():.4f}")
+    print(f"  Trained model recall: {imb_metrics.compute_recall():.4f}")
+    print(f"  Trained model F1: {imb_metrics.compute_f1():.4f}")
+
+    print("\n[6] Regression Metrics")
+    print("-" * 40)
+    X_reg, y_reg = generate_regression_data(200)
 
     col0 = [x[0] for x in X_reg]
     col1 = [x[1] for x in X_reg]
@@ -414,48 +574,31 @@ if __name__ == "__main__":
     col1_s, m1, s1 = standardize(col1)
     X_reg_scaled = [[col0_s[i], col1_s[i]] for i in range(len(X_reg))]
 
-    X_tr_r, y_tr_r, X_v_r, y_v_r, X_te_r, y_te_r = train_val_test_split(X_reg_scaled, y_reg)
-    reg_model = SimpleLinearRegression(lr=0.01, epochs=500)
+    X_tr_r, y_tr_r, X_v_r, y_v_r, X_te_r, y_te_r = DataSplitter.holdout_split(X_reg_scaled, y_reg)
+    reg_model = SimpleLinearModel(lr=0.01, epochs=500)
     reg_model.fit(X_tr_r, y_tr_r)
     y_pred_r = [reg_model.predict(x) for x in X_te_r]
 
-    print(f"  MSE:       {mse(y_te_r, y_pred_r):.4f}")
-    print(f"  RMSE:      {rmse(y_te_r, y_pred_r):.4f}")
-    print(f"  MAE:       {mae(y_te_r, y_pred_r):.4f}")
-    print(f"  R-squared: {r_squared(y_te_r, y_pred_r):.4f}")
+    print(f"  MSE:       {RegressionMetrics.mean_squared_error(y_te_r, y_pred_r):.4f}")
+    print(f"  RMSE:      {RegressionMetrics.root_mse(y_te_r, y_pred_r):.4f}")
+    print(f"  MAE:       {RegressionMetrics.mean_absolute_error(y_te_r, y_pred_r):.4f}")
+    print(f"  R-squared: {RegressionMetrics.r_squared(y_te_r, y_pred_r):.4f}")
 
-    mean_baseline = [sum(y_tr_r) / len(y_tr_r)] * len(y_te_r)
-    print(f"\n  Mean baseline:")
-    print(f"    MSE:       {mse(y_te_r, mean_baseline):.4f}")
-    print(f"    R-squared: {r_squared(y_te_r, mean_baseline):.4f}")
+    baseline = [sum(y_tr_r) / len(y_tr_r)] * len(y_te_r)
+    print(f"\n  Mean baseline R-squared: {RegressionMetrics.r_squared(y_te_r, baseline):.4f}")
 
-    print("\n=== Learning Curve ===")
-    sizes, train_sc, val_sc = learning_curve(
+    print("\n[7] Learning Curve Analysis")
+    print("-" * 40)
+    ratios, train_sc, val_sc = LearningCurveAnalyzer.generate_curve(
         X_clf, y_clf,
-        model_fn=lambda: SimpleLogistic(lr=0.1, epochs=200),
-        metric_fn=accuracy,
+        model_factory=lambda: SimpleLogisticModel(lr=0.1, epochs=200),
+        metric_fn=lambda y_true, y_pred: sum(1 for yt, yp in zip(y_true, y_pred) if yt == yp) / len(y_true)
     )
+
     print(f"  {'Size':>6} {'Train':>8} {'Val':>8}")
-    for s, tr, va in zip(sizes, train_sc, val_sc):
+    for s, tr, va in zip(ratios, train_sc, val_sc):
         print(f"  {s:>6} {tr:>8.4f} {va:>8.4f}")
 
-    print("\n=== Statistical Model Comparison ===")
-    model_a_scores = cross_validate(
-        X_clf, y_clf,
-        model_fn=lambda: SimpleLogistic(lr=0.1, epochs=100),
-        k=5, metric_fn=accuracy,
-    )
-    model_b_scores = cross_validate(
-        X_clf, y_clf,
-        model_fn=lambda: SimpleLogistic(lr=0.1, epochs=500),
-        k=5, metric_fn=accuracy,
-    )
-    diffs = [a - b for a, b in zip(model_a_scores, model_b_scores)]
-    mean_diff = sum(diffs) / len(diffs)
-    std_diff = math.sqrt(sum((d - mean_diff) ** 2 for d in diffs) / len(diffs))
-    t_stat = mean_diff / (std_diff / math.sqrt(len(diffs))) if std_diff > 0 else 0.0
-    print(f"  Model A (100 epochs) mean: {sum(model_a_scores)/len(model_a_scores):.4f}")
-    print(f"  Model B (500 epochs) mean: {sum(model_b_scores)/len(model_b_scores):.4f}")
-    print(f"  Mean difference: {mean_diff:.4f}")
-    print(f"  Paired t-statistic: {t_stat:.4f}")
-    print(f"  (|t| > 2.78 for significance at p<0.05 with df=4)")
+    print("\n" + "=" * 60)
+    print("  Model evaluation demonstration complete!")
+    print("=" * 60)

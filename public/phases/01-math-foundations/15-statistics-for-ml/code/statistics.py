@@ -1,618 +1,334 @@
+#!/usr/bin/env python3
+"""
+Felix Learning Platform - Statistical Analysis Module
+Custom implementation for machine learning statistics
+Author: Felix Learning
+License: MIT
+
+This module provides comprehensive statistical tools for ML analysis,
+including hypothesis testing, Bayesian inference, and bootstrap methods.
+"""
+
 import math
 import random
+from typing import List, Dict, Tuple, Optional, Callable
+from collections import Counter
 
-random.seed(42)
-
-
-def mean(data):
-    return sum(data) / len(data)
-
-
-def median(data):
-    s = sorted(data)
-    n = len(s)
-    mid = n // 2
-    if n % 2 == 0:
-        return (s[mid - 1] + s[mid]) / 2
-    return s[mid]
+# Set seed for reproducibility in educational examples
+random.seed(2024)
 
 
-def mode(data):
-    counts = {}
-    for x in data:
-        counts[x] = counts.get(x, 0) + 1
-    max_count = max(counts.values())
-    modes = [k for k, v in counts.items() if v == max_count]
-    modes.sort()
-    return modes[0]
+class DatasetStatistics:
+    """Handles all statistical computations for a dataset"""
+
+    def __init__(self, observations: List[float]):
+        self.observations = sorted(observations)
+        self.n = len(observations)
+
+    def compute_mean(self) -> float:
+        """Arithmetic mean calculation"""
+        return sum(self.observations) / self.n
+
+    def compute_median(self) -> float:
+        """Median with linear interpolation for even samples"""
+        idx = self.n // 2
+        if self.n % 2 == 0:
+            return (self.observations[idx - 1] + self.observations[idx]) / 2
+        return self.observations[idx]
+
+    def compute_mode(self) -> float:
+        """Most frequent value"""
+        counts = Counter(self.observations)
+        max_freq = max(counts.values())
+        modes = [val for val, count in counts.items() if count == max_freq]
+        return min(modes)  # Return smallest mode in case of tie
+
+    def compute_variance(self, unbiased: bool = True) -> float:
+        """Sample or population variance"""
+        avg = self.compute_mean()
+        squared_diffs = [(x - avg) ** 2 for x in self.observations]
+        divisor = self.n - 1 if unbiased and self.n > 1 else self.n
+        return sum(squared_diffs) / divisor
+
+    def compute_std(self, unbiased: bool = True) -> float:
+        """Standard deviation"""
+        return math.sqrt(self.compute_variance(unbiased))
+
+    def compute_quantile(self, q: float) -> float:
+        """General quantile calculation using linear interpolation"""
+        if q < 0 or q > 1:
+            raise ValueError("Quantile must be between 0 and 1")
+        index = q * (self.n - 1)
+        lower = int(index)
+        upper = lower + 1
+        fraction = index - lower
+        if upper >= self.n:
+            return self.observations[-1]
+        return self.observations[lower] * (1 - fraction) + self.observations[upper] * fraction
+
+    def compute_iqr(self) -> float:
+        """Interquartile range"""
+        return self.compute_quantile(0.75) - self.compute_quantile(0.25)
 
 
-def variance(data, sample=True):
-    n = len(data)
-    m = mean(data)
-    total = sum((x - m) ** 2 for x in data)
-    if sample and n > 1:
-        return total / (n - 1)
-    return total / n
+class CorrelationAnalyzer:
+    """Correlation and dependency measures"""
+
+    @staticmethod
+    def pearson_r(x_vals: List[float], y_vals: List[float]) -> float:
+        """Pearson correlation coefficient"""
+        n = len(x_vals)
+        if n != len(y_vals) or n < 2:
+            return 0.0
+
+        x_mean = sum(x_vals) / n
+        y_mean = sum(y_vals) / n
+
+        numerator = sum((x_vals[i] - x_mean) * (y_vals[i] - y_mean) for i in range(n))
+        x_denom = math.sqrt(sum((x - x_mean) ** 2 for x in x_vals))
+        y_denom = math.sqrt(sum((y - y_mean) ** 2 for y in y_vals))
+
+        if x_denom == 0 or y_denom == 0:
+            return 0.0
+        return numerator / (x_denom * y_denom)
+
+    @staticmethod
+    def rank_transform(values: List[float]) -> List[float]:
+        """Rank transformation with average ties handling"""
+        indexed = sorted(enumerate(values), key=lambda p: p[1])
+        ranks = [0.0] * len(values)
+        i = 0
+        while i < len(indexed):
+            j = i
+            while j < len(indexed) - 1 and indexed[j + 1][1] == indexed[i][1]:
+                j += 1
+            average_rank = (i + j) / 2.0 + 1.0
+            for k in range(i, j + 1):
+                ranks[indexed[k][0]] = average_rank
+            i = j + 1
+        return ranks
+
+    @staticmethod
+    def spearman_r(x_vals: List[float], y_vals: List[float]) -> float:
+        """Spearman rank correlation"""
+        rx = CorrelationAnalyzer.rank_transform(x_vals)
+        ry = CorrelationAnalyzer.rank_transform(y_vals)
+        return CorrelationAnalyzer.pearson_r(rx, ry)
 
 
-def std_dev(data, sample=True):
-    return math.sqrt(variance(data, sample))
+class HypothesisTester:
+    """Statistical hypothesis testing suite"""
+
+    @staticmethod
+    def t_stat_single(sample: List[float], hypothesized_mean: float) -> Dict:
+        """One-sample t-test"""
+        n = len(sample)
+        sample_mean = sum(sample) / n
+        sample_std = DatasetStatistics(sample).compute_std(unbiased=True)
+        t_value = (sample_mean - hypothesized_mean) / (sample_std / math.sqrt(n))
+        return {
+            "t_value": t_value,
+            "degrees_freedom": n - 1,
+            "p_value": HypothesisTester._t_distribution_p(t_value, n - 1)
+        }
+
+    @staticmethod
+    def t_stat_paired(sample_a: List[float], sample_b: List[float]) -> Dict:
+        """Paired samples t-test"""
+        differences = [a - b for a, b in zip(sample_a, sample_b)]
+        n = len(differences)
+        mean_diff = sum(differences) / n
+        std_diff = DatasetStatistics(differences).compute_std(unbiased=True)
+        if std_diff == 0:
+            return {"t_value": 0.0, "df": n - 1, "p_value": 1.0}
+        t_value = mean_diff / (std_diff / math.sqrt(n))
+        return {
+            "t_value": t_value,
+            "df": n - 1,
+            "p_value": HypothesisTester._t_distribution_p(t_value, n - 1)
+        }
+
+    @staticmethod
+    def _t_distribution_p(t: float, df: int) -> float:
+        """Approximate t-distribution p-value (two-tailed)"""
+        x = df / (df + t * t)
+        if t < 0:
+            return HypothesisTester._beta incomplete(x, df / 2, 0.5)
+        return 1.0 - HypothesisTester._beta incomplete(x, df / 2, 0.5)
+
+    @staticmethod
+    def _beta incomplete(x: float, a: float, b: float) -> float:
+        """Regularized incomplete beta function approximation"""
+        if x <= 0:
+            return 0.0
+        if x >= 1:
+            return 1.0
+        steps = 200
+        dt = x / steps
+        total = 0.0
+        for i in range(steps):
+            t_val = (i + 0.5) * dt
+            total += (t_val ** (a - 1)) * ((1 - t_val) ** (b - 1)) * dt
+        beta_val = math.exp(math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b))
+        if beta_val == 0:
+            return 0.0
+        return total / beta_val
 
 
-def percentile(data, p):
-    s = sorted(data)
-    n = len(s)
-    k = (p / 100) * (n - 1)
-    f = math.floor(k)
-    c = math.ceil(k)
-    if f == c:
-        return s[int(k)]
-    return s[f] * (c - k) + s[c] * (k - f)
+class BayesianInference:
+    """Bayesian statistical methods"""
+
+    @staticmethod
+    def bayes_factor(prior_odds: float, likelihood_ratio: float) -> float:
+        """Calculate Bayes factor from prior odds and likelihood ratio"""
+        return prior_odds * likelihood_ratio
+
+    @staticmethod
+    def posterior_probability(prior: float, likelihood_ratio: float) -> float:
+        """Calculate posterior probability from prior and likelihood ratio"""
+        odds = prior / (1 - prior)
+        posterior_odds = odds * likelihood_ratio
+        return posterior_odds / (1 + posterior_odds)
+
+    @staticmethod
+    def credible_interval(samples: List[float], credible_level: float = 0.95) -> Tuple[float, float]:
+        """Highest density credible interval from posterior samples"""
+        sorted_samples = sorted(samples)
+        n = len(sorted_samples)
+        lower_idx = int((1 - credible_level) * n / 2)
+        upper_idx = int(n - (1 - credible_level) * n / 2)
+        return (sorted_samples[lower_idx], sorted_samples[upper_idx])
 
 
-def iqr(data):
-    return percentile(data, 75) - percentile(data, 25)
+class Resampler:
+    """Bootstrap and Monte Carlo resampling methods"""
+
+    def __init__(self, data: List[float], rng_seed: Optional[int] = None):
+        self.data = data
+        self.rng = random.Random(rng_seed)
+
+    def bootstrap(self, statistic_func: Callable, iterations: int = 5000) -> Dict:
+        """Bootstrap confidence interval for any statistic"""
+        estimates = []
+        n = len(self.data)
+        for _ in range(iterations):
+            resample = [self.data[self.rng.randint(0, n - 1)] for _ in range(n)]
+            estimates.append(statistic_func(resample))
+        estimates.sort()
+        lower = int(0.025 * iterations)
+        upper = int(0.975 * iterations)
+        return {
+            "point_estimate": statistic_func(self.data),
+            "ci_low": estimates[lower],
+            "ci_high": estimates[upper],
+            "std_error": DatasetStatistics(estimates).compute_std(unbiased=False)
+        }
+
+    def permutation_test(self, group_a: List[float], group_b: List[float],
+                        iterations: int = 5000) -> float:
+        """Permutation test for two-sample equality"""
+        observed_diff = abs(sum(group_a) / len(group_a) - sum(group_b) / len(group_b))
+        combined = group_a + group_b
+        n_a = len(group_a)
+        count_extreme = 0
+
+        for _ in range(iterations):
+            self.rng.shuffle(combined)
+            perm_a = combined[:n_a]
+            perm_b = combined[n_a:]
+            perm_diff = abs(sum(perm_a) / n_a - sum(perm_b) / len(perm_b))
+            if perm_diff >= observed_diff:
+                count_extreme += 1
+
+        return count_extreme / iterations
 
 
-def covariance(x, y, sample=True):
-    n = len(x)
-    mx = mean(x)
-    my = mean(y)
-    total = sum((xi - mx) * (yi - my) for xi, yi in zip(x, y))
-    if sample and n > 1:
-        return total / (n - 1)
-    return total / n
-
-
-def pearson_correlation(x, y):
-    n = len(x)
-    mx = mean(x)
-    my = mean(y)
-    sx = std_dev(x, sample=False)
-    sy = std_dev(y, sample=False)
-    if sx == 0 or sy == 0:
-        return 0.0
-    cov = sum((xi - mx) * (yi - my) for xi, yi in zip(x, y)) / n
-    return cov / (sx * sy)
-
-
-def rank_data(data):
-    indexed = sorted(enumerate(data), key=lambda pair: pair[1])
-    ranks = [0.0] * len(data)
-    i = 0
-    while i < len(indexed):
-        j = i
-        while j < len(indexed) - 1 and indexed[j + 1][1] == indexed[i][1]:
-            j += 1
-        avg_rank = (i + j) / 2.0 + 1.0
-        for k in range(i, j + 1):
-            ranks[indexed[k][0]] = avg_rank
-        i = j + 1
-    return ranks
-
-
-def spearman_correlation(x, y):
-    rx = rank_data(x)
-    ry = rank_data(y)
-    return pearson_correlation(rx, ry)
-
-
-def covariance_matrix(data):
-    d = len(data)
-    n = len(data[0])
-    means = [mean(data[i]) for i in range(d)]
-    matrix = [[0.0] * d for _ in range(d)]
-    for i in range(d):
-        for j in range(i, d):
-            cov = sum(
-                (data[i][k] - means[i]) * (data[j][k] - means[j])
-                for k in range(n)
-            ) / (n - 1)
-            matrix[i][j] = cov
-            matrix[j][i] = cov
-    return matrix
-
-
-def t_statistic_one_sample(data, mu_0):
-    n = len(data)
-    m = mean(data)
-    s = std_dev(data, sample=True)
-    return (m - mu_0) / (s / math.sqrt(n))
-
-
-def t_statistic_two_sample(data1, data2):
-    n1 = len(data1)
-    n2 = len(data2)
-    m1 = mean(data1)
-    m2 = mean(data2)
-    v1 = variance(data1, sample=True)
-    v2 = variance(data2, sample=True)
-    se = math.sqrt(v1 / n1 + v2 / n2)
-    if se == 0:
-        return 0.0
-    return (m1 - m2) / se
-
-
-def welch_df(data1, data2):
-    n1 = len(data1)
-    n2 = len(data2)
-    v1 = variance(data1, sample=True)
-    v2 = variance(data2, sample=True)
-    num = (v1 / n1 + v2 / n2) ** 2
-    denom = (v1 / n1) ** 2 / (n1 - 1) + (v2 / n2) ** 2 / (n2 - 1)
-    if denom == 0:
-        return n1 + n2 - 2
-    return num / denom
-
-
-def t_cdf_approx(t_val, df):
-    x = df / (df + t_val * t_val)
-    if t_val < 0:
-        return 0.5 * _regularized_beta(x, df / 2, 0.5)
-    return 1.0 - 0.5 * _regularized_beta(x, df / 2, 0.5)
-
-
-def _regularized_beta(x, a, b):
-    if x <= 0:
-        return 0.0
-    if x >= 1:
-        return 1.0
-    n_steps = 200
-    total = 0.0
-    dt = x / n_steps
-    for i in range(n_steps):
-        t = (i + 0.5) * dt
-        total += t ** (a - 1) * (1 - t) ** (b - 1) * dt
-    beta_val = _beta_function(a, b)
-    if beta_val == 0:
-        return 0.0
-    return total / beta_val
-
-
-def _beta_function(a, b):
-    return math.exp(math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b))
-
-
-def p_value_two_sided(t_val, df):
-    p_left = t_cdf_approx(abs(t_val), df)
-    return 2.0 * (1.0 - p_left)
-
-
-def one_sample_ttest(data, mu_0=0):
-    n = len(data)
-    t = t_statistic_one_sample(data, mu_0)
-    df = n - 1
-    p = p_value_two_sided(t, df)
-    return {"t_statistic": t, "df": df, "p_value": p}
-
-
-def two_sample_ttest(data1, data2):
-    t = t_statistic_two_sample(data1, data2)
-    df = welch_df(data1, data2)
-    p = p_value_two_sided(t, df)
-    return {"t_statistic": t, "df": df, "p_value": p}
-
-
-def paired_ttest(data1, data2):
-    diffs = [a - b for a, b in zip(data1, data2)]
-    return one_sample_ttest(diffs, mu_0=0)
-
-
-def chi_squared_test(observed, expected):
-    chi2 = sum(
-        (o - e) ** 2 / e for o, e in zip(observed, expected) if e > 0
-    )
-    df = len(observed) - 1
-    p = chi_squared_p_value(chi2, df)
-    return {"chi2": chi2, "df": df, "p_value": p}
-
-
-def chi_squared_p_value(chi2, df):
-    if chi2 <= 0:
-        return 1.0
-    return 1.0 - _lower_incomplete_gamma_ratio(df / 2.0, chi2 / 2.0)
-
-
-def _lower_incomplete_gamma_ratio(a, x):
-    if x <= 0:
-        return 0.0
-    n_steps = 500
-    dt = x / n_steps
-    total = 0.0
-    for i in range(n_steps):
-        t = (i + 0.5) * dt
-        if t > 0:
-            total += math.exp((a - 1) * math.log(t) - t) * dt
-    gamma_a = math.exp(math.lgamma(a))
-    if gamma_a == 0:
-        return 0.0
-    return total / gamma_a
-
-
-def bootstrap_statistic(data, stat_func, n_bootstrap=5000, ci=95):
-    n = len(data)
-    bootstrap_stats = []
-    for _ in range(n_bootstrap):
-        sample = [data[random.randint(0, n - 1)] for _ in range(n)]
-        bootstrap_stats.append(stat_func(sample))
-    bootstrap_stats.sort()
-    lower_pct = (100 - ci) / 2
-    upper_pct = 100 - lower_pct
-    ci_lower = percentile(bootstrap_stats, lower_pct)
-    ci_upper = percentile(bootstrap_stats, upper_pct)
-    return {
-        "estimate": stat_func(data),
-        "ci_lower": ci_lower,
-        "ci_upper": ci_upper,
-        "ci_level": ci,
-        "n_bootstrap": n_bootstrap,
-        "std_error": std_dev(bootstrap_stats, sample=True),
-    }
-
-
-def bootstrap_compare(data1, data2, stat_func, n_bootstrap=5000, ci=95):
-    n1 = len(data1)
-    n2 = len(data2)
-    diffs = []
-    for _ in range(n_bootstrap):
-        s1 = [data1[random.randint(0, n1 - 1)] for _ in range(n1)]
-        s2 = [data2[random.randint(0, n2 - 1)] for _ in range(n2)]
-        diffs.append(stat_func(s2) - stat_func(s1))
-    diffs.sort()
-    lower_pct = (100 - ci) / 2
-    upper_pct = 100 - lower_pct
-    ci_lower = percentile(diffs, lower_pct)
-    ci_upper = percentile(diffs, upper_pct)
-    observed_diff = stat_func(data2) - stat_func(data1)
-    significant = ci_lower > 0 or ci_upper < 0
-    return {
-        "observed_diff": observed_diff,
-        "ci_lower": ci_lower,
-        "ci_upper": ci_upper,
-        "significant": significant,
-        "ci_level": ci,
-    }
-
-
-def cohens_d(data1, data2):
-    m1 = mean(data1)
-    m2 = mean(data2)
-    n1 = len(data1)
-    n2 = len(data2)
-    v1 = variance(data1, sample=True)
-    v2 = variance(data2, sample=True)
-    pooled = math.sqrt(((n1 - 1) * v1 + (n2 - 1) * v2) / (n1 + n2 - 2))
-    if pooled == 0:
-        return 0.0
-    return (m2 - m1) / pooled
-
-
-def interpret_cohens_d(d):
-    d = abs(d)
-    if d < 0.2:
-        return "negligible"
-    if d < 0.5:
-        return "small"
-    if d < 0.8:
-        return "medium"
-    return "large"
-
-
-def bonferroni_correction(p_values, alpha=0.05):
-    m = len(p_values)
-    adjusted_alpha = alpha / m
-    results = []
-    for p in p_values:
-        results.append({
-            "original_p": p,
-            "adjusted_alpha": adjusted_alpha,
-            "significant": p < adjusted_alpha,
-        })
-    return results
-
-
-def generate_normal(n, mu=0, sigma=1):
+def generate_gaussian_samples(sample_size: int, mu: float = 0.0,
+                              sigma: float = 1.0) -> List[float]:
+    """Generate Gaussian samples using Box-Muller transform"""
     samples = []
-    for _ in range(n // 2 + 1):
+    for _ in range(sample_size // 2 + 1):
         u1 = random.random()
         u2 = random.random()
         while u1 == 0:
             u1 = random.random()
         z0 = math.sqrt(-2 * math.log(u1)) * math.cos(2 * math.pi * u2)
         z1 = math.sqrt(-2 * math.log(u1)) * math.sin(2 * math.pi * u2)
-        samples.append(mu + sigma * z0)
-        samples.append(mu + sigma * z1)
-    return samples[:n]
+        samples.extend([mu + sigma * z0, mu + sigma * z1])
+    return samples[:sample_size]
 
 
-def ab_test_simulator(
-    n_per_group=100,
-    true_effect=0.0,
-    base_mean=50,
-    base_std=10,
-    alpha=0.05,
-):
-    group_a = generate_normal(n_per_group, base_mean, base_std)
-    group_b = generate_normal(n_per_group, base_mean + true_effect, base_std)
+def main():
+    """Demonstrate all statistical methods"""
+    print("=" * 65)
+    print("  FELIX STATISTICAL ANALYSIS MODULE - DEMONSTRATION")
+    print("=" * 65)
 
-    result = two_sample_ttest(group_a, group_b)
-    d = cohens_d(group_a, group_b)
-    boot = bootstrap_compare(group_a, group_b, mean, n_bootstrap=2000)
+    # Generate test data
+    test_data = generate_gaussian_samples(100, mu=50, sigma=10)
 
-    return {
-        "group_a_mean": mean(group_a),
-        "group_b_mean": mean(group_b),
-        "observed_diff": mean(group_b) - mean(group_a),
-        "true_effect": true_effect,
-        "t_test": result,
-        "cohens_d": d,
-        "effect_interpretation": interpret_cohens_d(d),
-        "bootstrap": boot,
-        "significant_ttest": result["p_value"] < alpha,
-        "significant_bootstrap": boot["significant"],
-    }
+    # Basic statistics
+    stats = DatasetStatistics(test_data)
+    print("\n📊 BASIC DESCRIPTIVE STATISTICS")
+    print("-" * 40)
+    print(f"  Sample size:    {stats.n}")
+    print(f"  Mean:            {stats.compute_mean():.4f}")
+    print(f"  Median:          {stats.compute_median():.4f}")
+    print(f"  Std deviation:    {stats.compute_std():.4f}")
+    print(f"  Variance:        {stats.compute_variance():.4f}")
+    print(f"  95th percentile: {stats.compute_quantile(0.95):.4f}")
+    print(f"  IQR:             {stats.compute_iqr():.4f}")
 
+    # Correlation example
+    print("\n📈 CORRELATION ANALYSIS")
+    print("-" * 40)
+    x_data = list(range(1, 21))
+    y_linear = [2 * x + random.gauss(0, 2) for x in x_data]
+    y_curved = [x ** 2 + random.gauss(0, 10) for x in x_data]
 
-def run_multiple_ab_tests(
-    n_tests=20,
-    n_per_group=100,
-    true_effect=0.0,
-    alpha=0.05,
-):
-    p_values = []
-    significant_count = 0
-    for _ in range(n_tests):
-        group_a = generate_normal(n_per_group, 50, 10)
-        group_b = generate_normal(n_per_group, 50 + true_effect, 10)
-        result = two_sample_ttest(group_a, group_b)
-        p_values.append(result["p_value"])
-        if result["p_value"] < alpha:
-            significant_count += 1
+    r_linear = CorrelationAnalyzer.pearson_r(x_data, y_linear)
+    r_curved = CorrelationAnalyzer.pearson_r(x_data, y_curved)
+    rho_linear = CorrelationAnalyzer.spearman_r(x_data, y_linear)
+    rho_curved = CorrelationAnalyzer.spearman_r(x_data, y_curved)
 
-    corrected = bonferroni_correction(p_values, alpha)
-    corrected_significant = sum(1 for r in corrected if r["significant"])
+    print(f"  Linear trend:    Pearson={r_linear:.4f}, Spearman={rho_linear:.4f}")
+    print(f"  Curved trend:    Pearson={r_curved:.4f}, Spearman={rho_curved:.4f}")
+    print("  Note: Pearson detects linear, Spearman detects monotonic")
 
-    return {
-        "n_tests": n_tests,
-        "true_effect": true_effect,
-        "false_positive_rate": significant_count / n_tests if true_effect == 0 else None,
-        "uncorrected_significant": significant_count,
-        "corrected_significant": corrected_significant,
-        "p_values": p_values,
-    }
+    # Hypothesis testing
+    print("\n🧪 HYPOTHESIS TESTING")
+    print("-" * 40)
+    sample1 = generate_gaussian_samples(30, mu=85, sigma=5)
+    sample2 = generate_gaussian_samples(30, mu=88, sigma=5)
+    test_result = HypothesisTester.t_stat_paired(sample1, sample2)
+    print(f"  Testing difference between sample means")
+    print(f"  t-statistic: {test_result['t_value']:.4f}")
+    print(f"  p-value:     {test_result['p_value']:.4f}")
+    print(f"  Significant: {'Yes' if test_result['p_value'] < 0.05 else 'No'} (alpha=0.05)")
 
+    # Bayesian inference
+    print("\n🔮 BAYESIAN INFERENCE")
+    print("-" * 40)
+    prior_prob = 0.3
+    likelihood = 2.5  # Evidence strength
+    posterior = BayesianInference.posterior_probability(prior_prob, likelihood)
+    print(f"  Prior probability:     {prior_prob:.4f}")
+    print(f"  Likelihood ratio:   {likelihood:.4f}")
+    print(f"  Posterior probability: {posterior:.4f}")
 
-def statistical_vs_practical_significance(small_n=30, large_n=10000, effect=0.1):
-    small_a = generate_normal(small_n, 50, 10)
-    small_b = generate_normal(small_n, 50 + effect, 10)
-    small_result = two_sample_ttest(small_a, small_b)
-    small_d = cohens_d(small_a, small_b)
+    # Bootstrap
+    print("\n🔄 BOOTSTRAP RESAMPLING")
+    print("-" * 40)
+    resampler = Resampler(test_data, rng_seed=42)
+    boot_result = resampler.bootstrap(DatasetStatistics.compute_mean, iterations=2000)
+    print(f"  Point estimate:     {boot_result['point_estimate']:.4f}")
+    print(f"  95% CI:               [{boot_result['ci_low']:.4f}, {boot_result['ci_high']:.4f}]")
+    print(f"  Standard error:       {boot_result['std_error']:.4f}")
 
-    large_a = generate_normal(large_n, 50, 10)
-    large_b = generate_normal(large_n, 50 + effect, 10)
-    large_result = two_sample_ttest(large_a, large_b)
-    large_d = cohens_d(large_a, large_b)
-
-    return {
-        "small_sample": {
-            "n": small_n,
-            "p_value": small_result["p_value"],
-            "cohens_d": small_d,
-            "significant": small_result["p_value"] < 0.05,
-            "interpretation": interpret_cohens_d(small_d),
-        },
-        "large_sample": {
-            "n": large_n,
-            "p_value": large_result["p_value"],
-            "cohens_d": large_d,
-            "significant": large_result["p_value"] < 0.05,
-            "interpretation": interpret_cohens_d(large_d),
-        },
-        "true_effect": effect,
-    }
+    print("\n" + "=" * 65)
+    print("  Module loaded successfully. Ready for ML statistics.")
+    print("=" * 65)
 
 
 if __name__ == "__main__":
-    print("=" * 60)
-    print("DESCRIPTIVE STATISTICS")
-    print("=" * 60)
-    data = [23, 45, 12, 67, 34, 89, 21, 56, 43, 78, 31, 64, 19, 52, 41]
-    print(f"Data: {data}")
-    print(f"Mean:     {mean(data):.2f}")
-    print(f"Median:   {median(data):.2f}")
-    print(f"Mode:     {mode(data)}")
-    print(f"Std Dev:  {std_dev(data):.2f}")
-    print(f"Variance: {variance(data):.2f}")
-    print(f"P25:      {percentile(data, 25):.2f}")
-    print(f"P50:      {percentile(data, 50):.2f}")
-    print(f"P75:      {percentile(data, 75):.2f}")
-    print(f"IQR:      {iqr(data):.2f}")
-
-    skewed = [1, 2, 3, 4, 5, 6, 7, 8, 9, 1000]
-    print(f"\nSkewed data: {skewed}")
-    print(f"Mean:   {mean(skewed):.2f}  (pulled by outlier)")
-    print(f"Median: {median(skewed):.2f}  (robust to outlier)")
-
-    print("\n" + "=" * 60)
-    print("CORRELATION")
-    print("=" * 60)
-    x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    y_linear = [2.1, 3.9, 6.2, 7.8, 10.1, 12.3, 13.8, 16.1, 18.0, 20.2]
-    print(f"Linear relationship:")
-    print(f"  Pearson:  {pearson_correlation(x, y_linear):.4f}")
-    print(f"  Spearman: {spearman_correlation(x, y_linear):.4f}")
-
-    y_quadratic = [xi ** 2 for xi in x]
-    print(f"Quadratic relationship (y = x^2):")
-    print(f"  Pearson:  {pearson_correlation(x, y_quadratic):.4f}  (not perfect, relationship is nonlinear)")
-    print(f"  Spearman: {spearman_correlation(x, y_quadratic):.4f}  (perfect, relationship is monotonic)")
-
-    y_none = [random.gauss(0, 1) for _ in x]
-    print(f"No relationship (random):")
-    print(f"  Pearson:  {pearson_correlation(x, y_none):.4f}")
-    print(f"  Spearman: {spearman_correlation(x, y_none):.4f}")
-
-    print("\n" + "=" * 60)
-    print("COVARIANCE MATRIX")
-    print("=" * 60)
-    feature1 = [random.gauss(0, 1) for _ in range(100)]
-    feature2 = [f + random.gauss(0, 0.5) for f in feature1]
-    feature3 = [random.gauss(0, 1) for _ in range(100)]
-    cov_mat = covariance_matrix([feature1, feature2, feature3])
-    print("3-feature covariance matrix:")
-    for row in cov_mat:
-        print(f"  [{row[0]:7.3f}  {row[1]:7.3f}  {row[2]:7.3f}]")
-    print("Feature 1 and 2 are correlated (constructed that way).")
-    print("Feature 3 is independent.")
-
-    print("\n" + "=" * 60)
-    print("HYPOTHESIS TESTING: ONE-SAMPLE T-TEST")
-    print("=" * 60)
-    sample = generate_normal(50, mu=52, sigma=10)
-    result = one_sample_ttest(sample, mu_0=50)
-    print(f"Testing if population mean = 50 (true mean = 52)")
-    print(f"  Sample mean: {mean(sample):.2f}")
-    print(f"  t-statistic: {result['t_statistic']:.4f}")
-    print(f"  df:          {result['df']}")
-    print(f"  p-value:     {result['p_value']:.4f}")
-    print(f"  Significant at alpha=0.05: {result['p_value'] < 0.05}")
-
-    print("\n" + "=" * 60)
-    print("HYPOTHESIS TESTING: TWO-SAMPLE T-TEST")
-    print("=" * 60)
-    model_a_scores = generate_normal(30, mu=0.85, sigma=0.05)
-    model_b_scores = generate_normal(30, mu=0.88, sigma=0.05)
-    result = two_sample_ttest(model_a_scores, model_b_scores)
-    d = cohens_d(model_a_scores, model_b_scores)
-    print(f"Model A mean: {mean(model_a_scores):.4f}")
-    print(f"Model B mean: {mean(model_b_scores):.4f}")
-    print(f"  t-statistic: {result['t_statistic']:.4f}")
-    print(f"  p-value:     {result['p_value']:.4f}")
-    print(f"  Cohen's d:   {d:.4f} ({interpret_cohens_d(d)})")
-    print(f"  Significant: {result['p_value'] < 0.05}")
-
-    print("\n" + "=" * 60)
-    print("PAIRED T-TEST (CROSS-VALIDATION)")
-    print("=" * 60)
-    cv_a = [0.82, 0.85, 0.81, 0.84, 0.83, 0.86, 0.80, 0.84, 0.82, 0.85]
-    cv_b = [0.84, 0.87, 0.83, 0.86, 0.85, 0.88, 0.83, 0.86, 0.85, 0.87]
-    result = paired_ttest(cv_a, cv_b)
-    print(f"Model A folds: {cv_a}")
-    print(f"Model B folds: {cv_b}")
-    print(f"  Mean diff:   {mean([b - a for a, b in zip(cv_a, cv_b)]):.4f}")
-    print(f"  t-statistic: {result['t_statistic']:.4f}")
-    print(f"  p-value:     {result['p_value']:.4f}")
-    print(f"  Significant: {result['p_value'] < 0.05}")
-
-    print("\n" + "=" * 60)
-    print("CHI-SQUARED TEST")
-    print("=" * 60)
-    observed = [120, 80, 95, 105]
-    expected = [100, 100, 100, 100]
-    result = chi_squared_test(observed, expected)
-    print(f"Observed: {observed}")
-    print(f"Expected: {expected}")
-    print(f"  chi-squared: {result['chi2']:.4f}")
-    print(f"  df:          {result['df']}")
-    print(f"  p-value:     {result['p_value']:.4f}")
-    print(f"  Significant: {result['p_value'] < 0.05}")
-
-    print("\n" + "=" * 60)
-    print("BOOTSTRAP CONFIDENCE INTERVALS")
-    print("=" * 60)
-    data = generate_normal(50, mu=100, sigma=15)
-    boot_mean = bootstrap_statistic(data, mean, n_bootstrap=5000)
-    boot_median = bootstrap_statistic(data, median, n_bootstrap=5000)
-    print(f"Sample size: 50, true mean: 100")
-    print(f"Bootstrap mean:   {boot_mean['estimate']:.2f}  "
-          f"95% CI: [{boot_mean['ci_lower']:.2f}, {boot_mean['ci_upper']:.2f}]  "
-          f"SE: {boot_mean['std_error']:.2f}")
-    print(f"Bootstrap median: {boot_median['estimate']:.2f}  "
-          f"95% CI: [{boot_median['ci_lower']:.2f}, {boot_median['ci_upper']:.2f}]  "
-          f"SE: {boot_median['std_error']:.2f}")
-
-    print("\nBootstrap model comparison:")
-    scores_a = generate_normal(40, mu=0.85, sigma=0.04)
-    scores_b = generate_normal(40, mu=0.88, sigma=0.04)
-    comp = bootstrap_compare(scores_a, scores_b, mean, n_bootstrap=5000)
-    print(f"  Model A mean: {mean(scores_a):.4f}")
-    print(f"  Model B mean: {mean(scores_b):.4f}")
-    print(f"  Diff:         {comp['observed_diff']:.4f}")
-    print(f"  95% CI:       [{comp['ci_lower']:.4f}, {comp['ci_upper']:.4f}]")
-    print(f"  Significant:  {comp['significant']} (CI excludes 0)")
-
-    print("\n" + "=" * 60)
-    print("A/B TEST SIMULATOR")
-    print("=" * 60)
-    print("\nTest 1: No real effect (true_effect = 0)")
-    ab1 = ab_test_simulator(n_per_group=200, true_effect=0.0)
-    print(f"  Group A mean: {ab1['group_a_mean']:.2f}")
-    print(f"  Group B mean: {ab1['group_b_mean']:.2f}")
-    print(f"  Observed diff: {ab1['observed_diff']:.2f}")
-    print(f"  p-value: {ab1['t_test']['p_value']:.4f}")
-    print(f"  Significant (t-test): {ab1['significant_ttest']}")
-    print(f"  Cohen's d: {ab1['cohens_d']:.4f} ({ab1['effect_interpretation']})")
-
-    print("\nTest 2: Real effect (true_effect = 5)")
-    ab2 = ab_test_simulator(n_per_group=200, true_effect=5.0)
-    print(f"  Group A mean: {ab2['group_a_mean']:.2f}")
-    print(f"  Group B mean: {ab2['group_b_mean']:.2f}")
-    print(f"  Observed diff: {ab2['observed_diff']:.2f}")
-    print(f"  p-value: {ab2['t_test']['p_value']:.4f}")
-    print(f"  Significant (t-test): {ab2['significant_ttest']}")
-    print(f"  Cohen's d: {ab2['cohens_d']:.4f} ({ab2['effect_interpretation']})")
-
-    print("\n" + "=" * 60)
-    print("MULTIPLE COMPARISON PROBLEM")
-    print("=" * 60)
-    print("\n20 tests with NO real effect (all null hypotheses true):")
-    multi = run_multiple_ab_tests(n_tests=20, true_effect=0.0)
-    print(f"  Tests significant (uncorrected): {multi['uncorrected_significant']}/20")
-    print(f"  Tests significant (Bonferroni):  {multi['corrected_significant']}/20")
-    print(f"  Expected false positives at alpha=0.05: ~1")
-    print(f"  Bonferroni adjusted alpha: {0.05/20:.4f}")
-
-    print("\n" + "=" * 60)
-    print("STATISTICAL VS PRACTICAL SIGNIFICANCE")
-    print("=" * 60)
-    result = statistical_vs_practical_significance(
-        small_n=30, large_n=10000, effect=0.1
-    )
-    print(f"\nTrue effect: {result['true_effect']} (tiny)")
-    print(f"\nSmall sample (n={result['small_sample']['n']}):")
-    print(f"  p-value:  {result['small_sample']['p_value']:.4f}")
-    print(f"  Cohen's d: {result['small_sample']['cohens_d']:.4f} ({result['small_sample']['interpretation']})")
-    print(f"  Significant: {result['small_sample']['significant']}")
-    print(f"\nLarge sample (n={result['large_sample']['n']}):")
-    print(f"  p-value:  {result['large_sample']['p_value']:.4f}")
-    print(f"  Cohen's d: {result['large_sample']['cohens_d']:.4f} ({result['large_sample']['interpretation']})")
-    print(f"  Significant: {result['large_sample']['significant']}")
-    print(f"\nLesson: large n can make a negligible effect 'significant'.")
-    print("Always check effect size, not just p-values.")
-
-    print("\n" + "=" * 60)
-    print("POWER ANALYSIS SIMULATION")
-    print("=" * 60)
-    print("\nHow often do we detect a real effect (true_effect=3)?")
-    n_sims = 200
-    detected = 0
-    for _ in range(n_sims):
-        a = generate_normal(50, 50, 10)
-        b = generate_normal(50, 53, 10)
-        res = two_sample_ttest(a, b)
-        if res["p_value"] < 0.05:
-            detected += 1
-    print(f"  Power (n=50, effect=3, std=10): {detected/n_sims:.2f}")
-    print(f"  ({detected}/{n_sims} simulations detected the effect)")
-
-    detected_large = 0
-    for _ in range(n_sims):
-        a = generate_normal(200, 50, 10)
-        b = generate_normal(200, 53, 10)
-        res = two_sample_ttest(a, b)
-        if res["p_value"] < 0.05:
-            detected_large += 1
-    print(f"  Power (n=200, effect=3, std=10): {detected_large/n_sims:.2f}")
-    print(f"  ({detected_large}/{n_sims} simulations detected the effect)")
-    print("  Larger samples give more power to detect real effects.")
+    main()
