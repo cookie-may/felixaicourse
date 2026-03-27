@@ -1,154 +1,292 @@
+#!/usr/bin/env python3
+"""
+Felix Learning Platform - K-Nearest Neighbors Module
+Distance-based classification and regression algorithms
+Author: Felix Learning
+License: MIT
+
+This module implements KNN and KD-Tree algorithms with custom
+class-based architecture for Felix's ML curriculum.
+"""
+
 import math
 import random
+from typing import List, Callable, Tuple, Optional, Dict, Any
+from dataclasses import dataclass
 
 
-def l2_distance(a, b):
-    return math.sqrt(sum((ai - bi) ** 2 for ai, bi in zip(a, b)))
+@dataclass
+class VectorPoint:
+    """Container for vector data points"""
+    coordinates: List[float]
+    index: int
+    label: Any = None
 
 
-def l1_distance(a, b):
-    return sum(abs(ai - bi) for ai, bi in zip(a, b))
+class MetricCalculator:
+    """Compute various distance metrics between vectors"""
+
+    @staticmethod
+    def euclidean(vec_a: List[float], vec_b: List[float]) -> float:
+        """L2/Euclidean distance"""
+        return math.sqrt(sum((a - b) ** 2 for a, b in zip(vec_a, vec_b)))
+
+    @staticmethod
+    def manhattan(vec_a: List[float], vec_b: List[float]) -> float:
+        """L1/Manhattan distance"""
+        return sum(abs(a - b) for a, b in zip(vec_a, vec_b))
+
+    @staticmethod
+    def cosine_similarity(vec_a: List[float], vec_b: List[float]) -> float:
+        """Cosine similarity measure"""
+        dot_val = sum(a * b for a, b in zip(vec_a, vec_b))
+        norm_a = math.sqrt(sum(a ** 2 for a in vec_a))
+        norm_b = math.sqrt(sum(b ** 2 for b in vec_b))
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+        return dot_val / (norm_a * norm_b)
+
+    @staticmethod
+    def cosine_distance(vec_a: List[float], vec_b: List[float]) -> float:
+        """Cosine distance (1 - similarity)"""
+        return 1.0 - MetricCalculator.cosine_similarity(vec_a, vec_b)
+
+    @staticmethod
+    def minkowski(vec_a: List[float], vec_b: List[float], power: float = 2.0) -> float:
+        """Minkowski distance family"""
+        if power == float('inf'):
+            return max(abs(a - b) for a, b in zip(vec_a, vec_b))
+        return sum(abs(a - b) ** power for a, b in zip(vec_a, vec_b)) ** (1 / power)
 
 
-def cosine_distance(a, b):
-    dot_val = sum(ai * bi for ai, bi in zip(a, b))
-    norm_a = math.sqrt(sum(ai ** 2 for ai in a))
-    norm_b = math.sqrt(sum(bi ** 2 for bi in b))
-    if norm_a == 0 or norm_b == 0:
-        return 1.0
-    return 1.0 - dot_val / (norm_a * norm_b)
+class DataScaler:
+    """Standardize features to zero mean and unit variance"""
+
+    def __init__(self):
+        self.means: List[float] = []
+        self.stds: List[float] = []
+        self.is_fitted: bool = False
+
+    def fit(self, X: List[List[float]]) -> 'DataScaler':
+        """Compute mean and std for each feature"""
+        n = len(X)
+        d = len(X[0])
+        self.means = [sum(X[i][j] for i in range(n)) / n for j in range(d)]
+        self.stds = [
+            max(1e-10, (sum((X[i][j] - self.means[j]) ** 2 for i in range(n)) / n) ** 0.5)
+            for j in range(d)
+        ]
+        self.is_fitted = True
+        return self
+
+    def transform(self, X: List[List[float]]) -> List[List[float]]:
+        """Apply standardization"""
+        if not self.is_fitted:
+            raise RuntimeError("Scaler must be fitted before transform")
+        return [
+            [(x[j] - self.means[j]) / self.stds[j] for j in range(len(x))]
+            for x in X
+        ]
+
+    def fit_transform(self, X: List[List[float]]) -> Tuple[List[List[float]], List[float], List[float]]:
+        """Fit and transform in one step"""
+        self.fit(X)
+        return self.transform(X), self.means, self.stds
 
 
-def minkowski_distance(a, b, p=2):
-    if p == float("inf"):
-        return max(abs(ai - bi) for ai, bi in zip(a, b))
-    return sum(abs(ai - bi) ** p for ai, bi in zip(a, b)) ** (1 / p)
+class NeighborFinder:
+    """Find k-nearest neighbors from a dataset"""
+
+    def __init__(self, k: int = 5, distance_fn: Callable = MetricCalculator.euclidean):
+        self.k = k
+        self.distance_fn = distance_fn
+
+    def find(self, query: List[float], dataset: List[List[float]]) -> List[Tuple[float, int, Any]]:
+        """Find k nearest neighbors with their indices"""
+        distances = []
+        for i in range(len(dataset)):
+            d = self.distance_fn(query, dataset[i])
+            distances.append((d, i))
+        distances.sort(key=lambda pair: pair[0])
+        return distances[:self.k]
 
 
-def standardize(X):
-    n = len(X)
-    d = len(X[0])
-    means = [sum(X[i][j] for i in range(n)) / n for j in range(d)]
-    stds = [
-        max(
-            1e-10,
-            (sum((X[i][j] - means[j]) ** 2 for i in range(n)) / n) ** 0.5,
-        )
-        for j in range(d)
-    ]
-    X_scaled = [
-        [(X[i][j] - means[j]) / stds[j] for j in range(d)] for i in range(n)
-    ]
-    return X_scaled, means, stds
+class VoteAggregator:
+    """Aggregate neighbor votes for classification/regression"""
+
+    @staticmethod
+    def majority_vote(labels: List[Any]) -> Any:
+        """Simple majority voting"""
+        counts = {}
+        for label in labels:
+            counts[label] = counts.get(label, 0) + 1
+        return max(counts, key=counts.get)
+
+    @staticmethod
+    def weighted_vote(neighbor_distances: List[Tuple[float, Any]]) -> Any:
+        """Distance-weighted majority voting"""
+        votes = {}
+        for dist, label in neighbor_distances:
+            weight = 1.0 / (dist + 1e-10)
+            votes[label] = votes.get(label, 0) + weight
+        return max(votes, key=votes.get)
+
+    @staticmethod
+    def average_regression(values: List[float]) -> float:
+        """Simple average for regression"""
+        return sum(values) / len(values)
+
+    @staticmethod
+    def weighted_regression(neighbor_distances: List[Tuple[float, float]]) -> float:
+        """Distance-weighted average for regression"""
+        w_sum = 0.0
+        val_sum = 0.0
+        for dist, val in neighbor_distances:
+            w = 1.0 / (dist + 1e-10)
+            val_sum += w * val
+            w_sum += w
+        return val_sum / w_sum if w_sum > 0 else 0.0
 
 
-def apply_standardize(X, means, stds):
-    return [[(x[j] - means[j]) / stds[j] for j in range(len(x))] for x in X]
+class FelixKNNClassifier:
+    """K-Nearest Neighbors classifier with configurable distance metrics"""
 
-
-class KNN:
-    def __init__(self, k=5, distance_fn=l2_distance, weighted=False,
-                 task="classification"):
+    def __init__(self, k: int = 5, distance_fn: Callable = MetricCalculator.euclidean,
+                 weighted: bool = False):
         self.k = k
         self.distance_fn = distance_fn
         self.weighted = weighted
-        self.task = task
-        self.X_train = None
-        self.y_train = None
+        self.X_train: List[List[float]] = []
+        self.y_train: List[Any] = []
 
-    def fit(self, X, y):
+    def fit(self, X: List[List[float]], y: List[Any]) -> 'FelixKNNClassifier':
+        """Store training data"""
         self.X_train = list(X)
         self.y_train = list(y)
+        return self
 
-    def predict(self, X):
-        return [self._predict_one(x) for x in X]
+    def predict_single(self, x: List[float]) -> Any:
+        """Predict label for single sample"""
+        finder = NeighborFinder(self.k, self.distance_fn)
+        neighbors = finder.find(x, self.X_train)
 
-    def _predict_one(self, x):
-        distances = []
-        for i in range(len(self.X_train)):
-            d = self.distance_fn(x, self.X_train[i])
-            distances.append((d, self.y_train[i]))
-        distances.sort(key=lambda pair: pair[0])
-        neighbors = distances[: self.k]
+        neighbor_data = [(dist, self.y_train[idx]) for dist, idx in neighbors]
 
-        if self.task == "classification":
-            return self._classify(neighbors)
-        return self._regress(neighbors)
-
-    def _classify(self, neighbors):
         if self.weighted:
-            votes = {}
-            for dist, label in neighbors:
-                w = 1.0 / (dist + 1e-10)
-                votes[label] = votes.get(label, 0) + w
-        else:
-            votes = {}
-            for _, label in neighbors:
-                votes[label] = votes.get(label, 0) + 1
-        return max(votes, key=votes.get)
+            return VoteAggregator.weighted_vote(neighbor_data)
+        return VoteAggregator.majority_vote([label for _, label in neighbor_data])
 
-    def _regress(self, neighbors):
-        if self.weighted:
-            w_sum = 0.0
-            val_sum = 0.0
-            for dist, val in neighbors:
-                w = 1.0 / (dist + 1e-10)
-                val_sum += w * val
-                w_sum += w
-            return val_sum / w_sum if w_sum > 0 else 0.0
-        return sum(val for _, val in neighbors) / len(neighbors)
+    def predict(self, X: List[List[float]]) -> List[Any]:
+        """Predict labels for multiple samples"""
+        return [self.predict_single(x) for x in X]
 
-    def predict_with_neighbors(self, x):
-        distances = []
-        for i in range(len(self.X_train)):
-            d = self.distance_fn(x, self.X_train[i])
-            distances.append((d, i, self.y_train[i]))
-        distances.sort(key=lambda t: t[0])
-        neighbors = distances[: self.k]
-        prediction = self._predict_one(x)
+    def predict_with_neighbors(self, x: List[float]) -> Tuple[Any, List[Tuple[float, int, Any]]]:
+        """Predict and return neighbor information"""
+        finder = NeighborFinder(self.k, self.distance_fn)
+        neighbors = finder.find(x, self.X_train)
+        prediction = self.predict_single(x)
         return prediction, neighbors
 
 
+class FelixKNNRegressor:
+    """K-Nearest Neighbors regressor"""
+
+    def __init__(self, k: int = 5, distance_fn: Callable = MetricCalculator.euclidean,
+                 weighted: bool = False):
+        self.k = k
+        self.distance_fn = distance_fn
+        self.weighted = weighted
+        self.X_train: List[List[float]] = []
+        self.y_train: List[float] = []
+
+    def fit(self, X: List[List[float]], y: List[float]) -> 'FelixKNNRegressor':
+        """Store training data"""
+        self.X_train = list(X)
+        self.y_train = list(y)
+        return self
+
+    def predict_single(self, x: List[float]) -> float:
+        """Predict value for single sample"""
+        finder = NeighborFinder(self.k, self.distance_fn)
+        neighbors = finder.find(x, self.X_train)
+
+        neighbor_data = [(dist, self.y_train[idx]) for dist, idx in neighbors]
+
+        if self.weighted:
+            return VoteAggregator.weighted_regression(neighbor_data)
+        return VoteAggregator.average_regression([val for _, val in neighbor_data])
+
+    def predict(self, X: List[List[float]]) -> List[float]:
+        """Predict values for multiple samples"""
+        return [self.predict_single(x) for x in X]
+
+
+@dataclass
 class KDNode:
-    def __init__(self, point, index, axis, left=None, right=None):
-        self.point = point
-        self.index = index
-        self.axis = axis
-        self.left = left
-        self.right = right
+    """Node in KD-Tree structure"""
+    point: List[float]
+    index: int
+    axis: int
+    left: Optional['KDNode'] = None
+    right: Optional['KDNode'] = None
 
 
-class KDTree:
-    def __init__(self, X):
-        self.dim = len(X[0])
-        indexed = [(X[i], i) for i in range(len(X))]
-        self.root = self._build(indexed, depth=0)
+class KDTreeBuilder:
+    """Build KD-Tree for efficient nearest neighbor search"""
 
-    def _build(self, points, depth):
+    def __init__(self):
+        self.root: Optional[KDNode] = None
+        self.dimensions: int = 0
+
+    def build(self, points: List[List[float]]) -> KDNode:
+        """Construct KD-Tree from point coordinates"""
         if not points:
             return None
-        axis = depth % self.dim
+
+        indexed = [(points[i], i) for i in range(len(points))]
+        self.dimensions = len(points[0])
+        self.root = self._construct(indexed, depth=0)
+        return self.root
+
+    def _construct(self, points: List[Tuple[List[float], int]], depth: int) -> Optional[KDNode]:
+        """Recursively construct tree nodes"""
+        if not points:
+            return None
+
+        axis = depth % self.dimensions
         points.sort(key=lambda p: p[0][axis])
         mid = len(points) // 2
+
         return KDNode(
             point=points[mid][0],
             index=points[mid][1],
             axis=axis,
-            left=self._build(points[:mid], depth + 1),
-            right=self._build(points[mid + 1 :], depth + 1),
+            left=self._construct(points[:mid], depth + 1),
+            right=self._construct(points[mid + 1:], depth + 1)
         )
 
-    def query(self, point, k=1):
-        best = []
+
+class KDTreeSearcher:
+    """Search KD-Tree for nearest neighbors"""
+
+    def __init__(self, tree_root: KDNode, dimensions: int):
+        self.root = tree_root
+        self.dimensions = dimensions
+
+    def query(self, point: List[float], k: int = 1) -> List[Tuple[float, int, List[float]]]:
+        """Find k nearest neighbors"""
+        best: List[Tuple[float, int, List[float]]] = []
         self._search(self.root, point, k, best)
         best.sort(key=lambda x: x[0])
         return best
 
-    def _search(self, node, point, k, best):
+    def _search(self, node: Optional[KDNode], point: List[float], k: int,
+               best: List[Tuple[float, int, List[float]]]):
+        """Recursive search with pruning"""
         if node is None:
             return
 
-        dist = l2_distance(point, node.point)
+        dist = MetricCalculator.euclidean(point, node.point)
 
         if len(best) < k:
             best.append((dist, node.index, node.point))
@@ -160,10 +298,8 @@ class KDTree:
         axis = node.axis
         diff = point[axis] - node.point[axis]
 
-        if diff <= 0:
-            first, second = node.left, node.right
-        else:
-            first, second = node.right, node.left
+        first = node.left if diff <= 0 else node.right
+        second = node.right if diff <= 0 else node.left
 
         self._search(first, point, k, best)
 
@@ -171,81 +307,107 @@ class KDTree:
             self._search(second, point, k, best)
 
 
-def accuracy(y_true, y_pred):
-    correct = sum(1 for a, b in zip(y_true, y_pred) if a == b)
-    return correct / len(y_true)
+class FelixKDTree:
+    """KD-Tree wrapper for nearest neighbor search"""
+
+    def __init__(self, X: List[List[float]]):
+        builder = KDTreeBuilder()
+        self.root = builder.build(X)
+        self.dimensions = builder.dimensions
+        self.searcher = KDTreeSearcher(self.root, self.dimensions)
+
+    def query(self, point: List[float], k: int = 1) -> List[Tuple[float, int, List[float]]]:
+        """Find k nearest neighbors"""
+        return self.searcher.query(point, k)
 
 
-def mse(y_true, y_pred):
-    return sum((a - b) ** 2 for a, b in zip(y_true, y_pred)) / len(y_true)
+class PerformanceMetrics:
+    """Compute classification and regression metrics"""
+
+    @staticmethod
+    def accuracy(y_true: List[Any], y_pred: List[Any]) -> float:
+        """Classification accuracy"""
+        correct = sum(1 for a, b in zip(y_true, y_pred) if a == b)
+        return correct / len(y_true)
+
+    @staticmethod
+    def mse(y_true: List[float], y_pred: List[float]) -> float:
+        """Mean squared error"""
+        return sum((a - b) ** 2 for a, b in zip(y_true, y_pred)) / len(y_true)
 
 
-def generate_classification_data(n_samples=200, n_classes=3, seed=42):
-    random.seed(seed)
-    X = []
-    y = []
-    centers = [
-        [1.0, 1.0],
-        [-1.0, -1.0],
-        [1.0, -1.0],
-    ]
-    for _ in range(n_samples):
-        c = random.randint(0, n_classes - 1)
-        x1 = centers[c][0] + random.gauss(0, 0.5)
-        x2 = centers[c][1] + random.gauss(0, 0.5)
-        X.append([x1, x2])
-        y.append(c)
-    return X, y
+class DataGenerator:
+    """Generate synthetic datasets for demos"""
+
+    @staticmethod
+    def classification(n_samples: int = 200, n_classes: int = 3, seed: int = 42) -> Tuple[List[List[float]], List[int]]:
+        """Generate multi-class classification data"""
+        random.seed(seed)
+        X, y = [], []
+        centers = [[1.0, 1.0], [-1.0, -1.0], [1.0, -1.0]]
+
+        for _ in range(n_samples):
+            c = random.randint(0, n_classes - 1)
+            x1 = centers[c][0] + random.gauss(0, 0.5)
+            x2 = centers[c][1] + random.gauss(0, 0.5)
+            X.append([x1, x2])
+            y.append(c)
+
+        return X, y
+
+    @staticmethod
+    def regression(n_samples: int = 200, seed: int = 42) -> Tuple[List[List[float]], List[float]]:
+        """Generate sine wave regression data"""
+        random.seed(seed)
+        X, y = [], []
+
+        for _ in range(n_samples):
+            x = random.uniform(-3, 3)
+            target = math.sin(x) + random.gauss(0, 0.15)
+            X.append([x])
+            y.append(target)
+
+        return X, y
+
+    @staticmethod
+    def high_dimensional(n_samples: int = 500, n_dims: int = 2, seed: int = 42) -> Tuple[List[List[float]], List[int]]:
+        """Generate data with noisy extra dimensions"""
+        random.seed(seed)
+        X, y = [], []
+
+        for _ in range(n_samples):
+            point = [random.uniform(0, 1) for _ in range(n_dims)]
+            label = 1 if sum(point[:2]) > 1.0 else 0
+            X.append(point)
+            y.append(label)
+
+        return X, y
+
+    @staticmethod
+    def train_test_split(X: List[List[float]], y: List[Any], test_ratio: float = 0.2, seed: int = 42) -> Tuple[List[List[float]], List[Any], List[List[float]], List[Any]]:
+        """Split data into train and test sets"""
+        random.seed(seed)
+        n = len(X)
+        indices = list(range(n))
+        random.shuffle(indices)
+        split = int(n * (1 - test_ratio))
+        train_idx = indices[:split]
+        test_idx = indices[split:]
+        return (
+            [X[i] for i in train_idx], [y[i] for i in train_idx],
+            [X[i] for i in test_idx], [y[i] for i in test_idx]
+        )
 
 
-def generate_regression_data(n_samples=200, seed=42):
-    random.seed(seed)
-    X = []
-    y = []
-    for _ in range(n_samples):
-        x = random.uniform(-3, 3)
-        target = math.sin(x) + random.gauss(0, 0.15)
-        X.append([x])
-        y.append(target)
-    return X, y
-
-
-def generate_high_dim_data(n_samples=500, n_dims=2, seed=42):
-    random.seed(seed)
-    X = []
-    y = []
-    for _ in range(n_samples):
-        point = [random.uniform(0, 1) for _ in range(n_dims)]
-        label = 1 if sum(point[:2]) > 1.0 else 0
-        X.append(point)
-        y.append(label)
-    return X, y
-
-
-def train_test_split(X, y, test_ratio=0.2, seed=42):
-    random.seed(seed)
-    n = len(X)
-    indices = list(range(n))
-    random.shuffle(indices)
-    split = int(n * (1 - test_ratio))
-    train_idx = indices[:split]
-    test_idx = indices[split:]
-    return (
-        [X[i] for i in train_idx],
-        [y[i] for i in train_idx],
-        [X[i] for i in test_idx],
-        [y[i] for i in test_idx],
-    )
-
-
-def demo_basic_knn():
+def demonstrate_basic_knn():
+    """Demo: Basic KNN classification"""
     print("=" * 65)
-    print("KNN CLASSIFICATION: THE BASICS")
+    print("  FELIX KNN CLASSIFICATION: THE BASICS")
     print("=" * 65)
     print()
 
-    X, y = generate_classification_data(200, seed=42)
-    X_train, y_train, X_test, y_test = train_test_split(X, y)
+    X, y = DataGenerator.classification(200, seed=42)
+    X_train, y_train, X_test, y_test = DataGenerator.train_test_split(X, y)
 
     print(f"  Dataset: {len(X)} samples, 2 features, 3 classes")
     print(f"  Train: {len(X_train)}  Test: {len(X_test)}")
@@ -256,10 +418,10 @@ def demo_basic_knn():
     print(f"  {'-' * 6}  {'-' * 10}  {'-' * 10}")
 
     for k in k_values:
-        knn = KNN(k=k, task="classification")
+        knn = FelixKNNClassifier(k=k)
         knn.fit(X_train, y_train)
-        train_acc = accuracy(y_train, knn.predict(X_train))
-        test_acc = accuracy(y_test, knn.predict(X_test))
+        train_acc = PerformanceMetrics.accuracy(y_train, knn.predict(X_train))
+        test_acc = PerformanceMetrics.accuracy(y_test, knn.predict(X_test))
         print(f"  {k:>6d}  {train_acc:>10.4f}  {test_acc:>10.4f}")
 
     print()
@@ -268,20 +430,22 @@ def demo_basic_knn():
     print()
 
 
-def demo_distance_metrics():
+def demonstrate_distance_metrics():
+    """Demo: Different distance metrics"""
     print("=" * 65)
-    print("DISTANCE METRICS: SAME DATA, DIFFERENT NEIGHBORS")
+    print("  FELIX DISTANCE METRICS: SAME DATA, DIFFERENT NEIGHBORS")
     print("=" * 65)
     print()
 
-    X, y = generate_classification_data(200, seed=42)
-    X_scaled, means, stds = standardize(X)
-    X_train, y_train, X_test, y_test = train_test_split(X_scaled, y)
+    X, y = DataGenerator.classification(200, seed=42)
+    scaler = DataScaler()
+    X_scaled, _, _ = scaler.fit_transform(X)
+    X_train, y_train, X_test, y_test = DataGenerator.train_test_split(X_scaled, y)
 
     metrics = [
-        ("L2 (Euclidean)", l2_distance),
-        ("L1 (Manhattan)", l1_distance),
-        ("Cosine", cosine_distance),
+        ("L2 (Euclidean)", MetricCalculator.euclidean),
+        ("L1 (Manhattan)", MetricCalculator.manhattan),
+        ("Cosine", MetricCalculator.cosine_distance),
     ]
 
     k = 5
@@ -291,66 +455,54 @@ def demo_distance_metrics():
     print(f"  {'-' * 20}  {'-' * 14}")
 
     for name, dist_fn in metrics:
-        knn = KNN(k=k, distance_fn=dist_fn, task="classification")
+        knn = FelixKNNClassifier(k=k, distance_fn=dist_fn)
         knn.fit(X_train, y_train)
-        test_acc = accuracy(y_test, knn.predict(X_test))
+        test_acc = PerformanceMetrics.accuracy(y_test, knn.predict(X_test))
         print(f"  {name:<20s}  {test_acc:>14.4f}")
 
     print()
 
-    query = X_test[0]
-    print(f"  Query point: [{query[0]:.3f}, {query[1]:.3f}]")
-    print(f"  True label: {y_test[0]}")
-    print()
 
-    for name, dist_fn in metrics:
-        knn = KNN(k=k, distance_fn=dist_fn, task="classification")
-        knn.fit(X_train, y_train)
-        pred, neighbors = knn.predict_with_neighbors(query)
-        print(f"  {name}: prediction = {pred}")
-        for dist, idx, label in neighbors:
-            print(f"    neighbor idx={idx}, label={label}, dist={dist:.4f}")
-        print()
-
-
-def demo_weighted_knn():
+def demonstrate_weighted_knn():
+    """Demo: Weighted vs unweighted KNN"""
     print("=" * 65)
-    print("WEIGHTED vs UNWEIGHTED KNN")
+    print("  FELIX WEIGHTED vs UNWEIGHTED KNN")
     print("=" * 65)
     print()
 
-    X, y = generate_classification_data(200, seed=42)
-    X_scaled, _, _ = standardize(X)
-    X_train, y_train, X_test, y_test = train_test_split(X_scaled, y)
+    X, y = DataGenerator.classification(200, seed=42)
+    scaler = DataScaler()
+    X_scaled, _, _ = scaler.fit_transform(X)
+    X_train, y_train, X_test, y_test = DataGenerator.train_test_split(X_scaled, y)
 
     k_values = [3, 7, 15, 25]
     print(f"  {'K':>6s}  {'Unweighted':>12s}  {'Weighted':>12s}  {'Diff':>8s}")
     print(f"  {'-' * 6}  {'-' * 12}  {'-' * 12}  {'-' * 8}")
 
     for k in k_values:
-        knn_uw = KNN(k=k, weighted=False, task="classification")
-        knn_w = KNN(k=k, weighted=True, task="classification")
+        knn_uw = FelixKNNClassifier(k=k, weighted=False)
+        knn_w = FelixKNNClassifier(k=k, weighted=True)
         knn_uw.fit(X_train, y_train)
         knn_w.fit(X_train, y_train)
-        acc_uw = accuracy(y_test, knn_uw.predict(X_test))
-        acc_w = accuracy(y_test, knn_w.predict(X_test))
+        acc_uw = PerformanceMetrics.accuracy(y_test, knn_uw.predict(X_test))
+        acc_w = PerformanceMetrics.accuracy(y_test, knn_w.predict(X_test))
         diff = acc_w - acc_uw
         print(f"  {k:>6d}  {acc_uw:>12.4f}  {acc_w:>12.4f}  {diff:>+8.4f}")
 
     print()
     print("  Weighted KNN is less sensitive to large K values.")
-    print("  Distant neighbors contribute less, so increasing K is safer.")
     print()
 
 
-def demo_regression():
+def demonstrate_regression():
+    """Demo: KNN regression"""
     print("=" * 65)
-    print("KNN REGRESSION: APPROXIMATING sin(x)")
+    print("  FELIX KNN REGRESSION: APPROXIMATING sin(x)")
     print("=" * 65)
     print()
 
-    X, y = generate_regression_data(200, seed=42)
-    X_train, y_train, X_test, y_test = train_test_split(X, y)
+    X, y = DataGenerator.regression(200, seed=42)
+    X_train, y_train, X_test, y_test = DataGenerator.train_test_split(X, y)
 
     k_values = [1, 3, 5, 10, 20, 50]
     print(f"  Target: y = sin(x) + noise")
@@ -360,35 +512,21 @@ def demo_regression():
     print(f"  {'-' * 6}  {'-' * 16}  {'-' * 14}")
 
     for k in k_values:
-        knn_uw = KNN(k=k, task="regression", weighted=False)
-        knn_w = KNN(k=k, task="regression", weighted=True)
-        knn_uw.fit(X_train, y_train)
-        knn_w.fit(X_train, y_train)
-        mse_uw = mse(y_test, knn_uw.predict(X_test))
-        mse_w = mse(y_test, knn_w.predict(X_test))
+        reg_uw = FelixKNNRegressor(k=k, weighted=False)
+        reg_w = FelixKNNRegressor(k=k, weighted=True)
+        reg_uw.fit(X_train, y_train)
+        reg_w.fit(X_train, y_train)
+        mse_uw = PerformanceMetrics.mse(y_test, reg_uw.predict(X_test))
+        mse_w = PerformanceMetrics.mse(y_test, reg_w.predict(X_test))
         print(f"  {k:>6d}  {mse_uw:>16.6f}  {mse_w:>14.6f}")
 
     print()
-    print("  K=1 overfits (follows noise). Large K underfits (over-smooths).")
-    print("  Weighted KNN smooths predictions while respecting local structure.")
-    print()
-
-    knn = KNN(k=5, task="regression", weighted=True)
-    knn.fit(X_train, y_train)
-
-    print("  Sample predictions (K=5, weighted):")
-    print(f"  {'x':>8s}  {'True y':>8s}  {'Pred y':>8s}  {'Error':>8s}")
-    print(f"  {'-' * 8}  {'-' * 8}  {'-' * 8}  {'-' * 8}")
-    for i in range(min(10, len(X_test))):
-        pred = knn.predict([X_test[i]])[0]
-        err = abs(y_test[i] - pred)
-        print(f"  {X_test[i][0]:>8.3f}  {y_test[i]:>8.3f}  {pred:>8.3f}  {err:>8.3f}")
-    print()
 
 
-def demo_curse_of_dimensionality():
+def demonstrate_curse_of_dimensionality():
+    """Demo: Curse of dimensionality effect"""
     print("=" * 65)
-    print("CURSE OF DIMENSIONALITY")
+    print("  FELIX CURSE OF DIMENSIONALITY")
     print("=" * 65)
     print()
 
@@ -398,8 +536,8 @@ def demo_curse_of_dimensionality():
     print("  Part 1: Distance ratio convergence")
     print(f"  {n_points} random uniform points in [0, 1]^d")
     print()
-    print(f"  {'Dimensions':>12s}  {'Max/Min dist':>14s}  {'Mean dist':>10s}  {'Std dist':>10s}")
-    print(f"  {'-' * 12}  {'-' * 14}  {'-' * 10}  {'-' * 10}")
+    print(f"  {'Dimensions':>12s}  {'Max/Min dist':>14s}  {'Mean dist':>10s}")
+    print(f"  {'-' * 12}  {'-' * 14}  {'-' * 10}")
 
     for d in dims:
         random.seed(42)
@@ -411,50 +549,24 @@ def demo_curse_of_dimensionality():
             i = random.randint(0, n_points - 1)
             j = random.randint(0, n_points - 1)
             if i != j:
-                distances.append(l2_distance(points[i], points[j]))
+                distances.append(MetricCalculator.euclidean(points[i], points[j]))
 
         if distances:
             max_d = max(distances)
-            min_d = min(d_val for d_val in distances if d_val > 0)
+            min_d = min(val for val in distances if val > 0)
             mean_d = sum(distances) / len(distances)
-            std_d = (sum((d_val - mean_d) ** 2 for d_val in distances) / len(distances)) ** 0.5
             ratio = max_d / min_d if min_d > 0 else float("inf")
-            print(f"  {d:>12d}  {ratio:>14.4f}  {mean_d:>10.4f}  {std_d:>10.4f}")
+            print(f"  {d:>12d}  {ratio:>14.4f}  {mean_d:>10.4f}")
 
     print()
     print("  As dimensions grow, max/min ratio shrinks toward 1.")
-    print("  All points become equally distant. 'Nearest' loses meaning.")
-    print()
-
-    print("  Part 2: KNN accuracy vs dimensionality")
-    print(f"  Binary classification: label = 1 if x[0] + x[1] > 1, else 0")
-    print(f"  Extra dimensions are pure noise.")
-    print()
-    print(f"  {'Dimensions':>12s}  {'K=5 Acc':>10s}  {'K=15 Acc':>10s}")
-    print(f"  {'-' * 12}  {'-' * 10}  {'-' * 10}")
-
-    for d in [2, 5, 10, 20, 50]:
-        X, y = generate_high_dim_data(400, n_dims=d, seed=42)
-        X_scaled, _, _ = standardize(X)
-        X_train, y_train, X_test, y_test = train_test_split(X_scaled, y)
-
-        knn5 = KNN(k=5, task="classification")
-        knn15 = KNN(k=15, task="classification")
-        knn5.fit(X_train, y_train)
-        knn15.fit(X_train, y_train)
-        acc5 = accuracy(y_test, knn5.predict(X_test))
-        acc15 = accuracy(y_test, knn15.predict(X_test))
-        print(f"  {d:>12d}  {acc5:>10.4f}  {acc15:>10.4f}")
-
-    print()
-    print("  Accuracy degrades as noisy dimensions increase.")
-    print("  The signal (first 2 dims) gets drowned by noise dimensions.")
     print()
 
 
-def demo_kdtree():
+def demonstrate_kdtree():
+    """Demo: KD-Tree efficiency"""
     print("=" * 65)
-    print("KD-TREE: EFFICIENT NEAREST NEIGHBOR SEARCH")
+    print("  FELIX KD-TREE: EFFICIENT NEAREST NEIGHBOR SEARCH")
     print("=" * 65)
     print()
 
@@ -478,12 +590,12 @@ def demo_kdtree():
 
         start = time.time()
         for q in queries:
-            dists = [(l2_distance(q, X[i]), i) for i in range(n)]
+            dists = [(MetricCalculator.euclidean(q, X[i]), i) for i in range(n)]
             dists.sort()
             _ = dists[:k]
         brute_time = time.time() - start
 
-        tree = KDTree(X)
+        tree = FelixKDTree(X)
 
         start = time.time()
         for q in queries:
@@ -495,120 +607,11 @@ def demo_kdtree():
 
     print()
 
-    X = [[random.uniform(0, 10) for _ in range(2)] for _ in range(100)]
-    tree = KDTree(X)
-    query = [5.0, 5.0]
 
-    brute = [(l2_distance(query, X[i]), i) for i in range(len(X))]
-    brute.sort()
-    brute_top5 = [(d, idx) for d, idx in brute[:5]]
-
-    kd_top5 = [(d, idx) for d, idx, _ in tree.query(query, k=5)]
-
-    print("  Verification (100 points, k=5):")
-    print(f"    Brute force: {[(round(d, 4), idx) for d, idx in brute_top5]}")
-    print(f"    KD-tree:     {[(round(d, 4), idx) for d, idx in kd_top5]}")
-    match = set(idx for _, idx in brute_top5) == set(idx for _, idx in kd_top5)
-    print(f"    Results match: {match}")
-    print()
-
-
-def demo_scaling_importance():
+def demonstrate_minkowski_family():
+    """Demo: Minkowski distance family"""
     print("=" * 65)
-    print("FEATURE SCALING: WHY IT MATTERS FOR KNN")
-    print("=" * 65)
-    print()
-
-    random.seed(42)
-    X = []
-    y = []
-    for _ in range(200):
-        age = random.gauss(40, 15)
-        salary = random.gauss(50000, 20000)
-        label = 1 if age > 45 and salary < 40000 else 0
-        X.append([age, salary])
-        y.append(label)
-
-    X_train, y_train, X_test, y_test = train_test_split(X, y)
-
-    knn_raw = KNN(k=5, task="classification")
-    knn_raw.fit(X_train, y_train)
-    acc_raw = accuracy(y_test, knn_raw.predict(X_test))
-
-    X_train_s, means, stds = standardize(X_train)
-    X_test_s = apply_standardize(X_test, means, stds)
-
-    knn_scaled = KNN(k=5, task="classification")
-    knn_scaled.fit(X_train_s, y_train)
-    acc_scaled = accuracy(y_test, knn_scaled.predict(X_test_s))
-
-    print(f"  Features: age (range ~10-70), salary (range ~10k-90k)")
-    print()
-    print(f"  Without scaling: accuracy = {acc_raw:.4f}")
-    print(f"  With scaling:    accuracy = {acc_scaled:.4f}")
-    print()
-
-    query = X_test[0]
-    query_s = X_test_s[0]
-
-    dists_raw = [(l2_distance(query, X_train[i]), i) for i in range(5)]
-    dists_raw.sort()
-    dists_scaled = [(l2_distance(query_s, X_train_s[i]), i) for i in range(5)]
-    dists_scaled.sort()
-
-    print(f"  Sample distances for first test point:")
-    print(f"  Without scaling: {[round(d, 1) for d, _ in dists_raw]}")
-    print(f"  With scaling:    {[round(d, 4) for d, _ in dists_scaled]}")
-    print()
-    print("  Unscaled: salary dominates (tens of thousands vs tens of years).")
-    print("  Scaled: both features contribute equally to distance.")
-    print()
-
-
-def demo_lazy_vs_eager():
-    print("=" * 65)
-    print("LAZY vs EAGER LEARNING: TIMING COMPARISON")
-    print("=" * 65)
-    print()
-
-    import time
-
-    random.seed(42)
-    sizes = [100, 500, 1000, 5000]
-
-    print(f"  {'N':>6s}  {'KNN train':>12s}  {'KNN predict':>14s}  {'Total':>10s}")
-    print(f"  {'-' * 6}  {'-' * 12}  {'-' * 14}  {'-' * 10}")
-
-    for n in sizes:
-        X = [[random.gauss(0, 1) for _ in range(5)] for _ in range(n)]
-        y = [random.choice([0, 1]) for _ in range(n)]
-
-        n_test = min(50, n // 5)
-        X_test_local = [[random.gauss(0, 1) for _ in range(5)] for _ in range(n_test)]
-
-        knn = KNN(k=5, task="classification")
-
-        start = time.time()
-        knn.fit(X, y)
-        train_time = time.time() - start
-
-        start = time.time()
-        knn.predict(X_test_local)
-        pred_time = time.time() - start
-
-        total = train_time + pred_time
-        print(f"  {n:>6d}  {train_time:>12.6f}s  {pred_time:>14.6f}s  {total:>10.6f}s")
-
-    print()
-    print("  KNN training is O(1): just store the data.")
-    print("  KNN prediction is O(n*d) per query: compute all distances.")
-    print("  For eager learners (neural nets), the pattern is reversed.")
-    print()
-
-
-def demo_minkowski_family():
-    print("=" * 65)
-    print("MINKOWSKI DISTANCE FAMILY")
+    print("  FELIX MINKOWSKI DISTANCE FAMILY")
     print("=" * 65)
     print()
 
@@ -623,7 +626,7 @@ def demo_minkowski_family():
     print(f"  {'-' * 8}  {'-' * 12}  {'-' * 15}")
 
     for p in p_values:
-        d = minkowski_distance(a, b, p)
+        d = MetricCalculator.minkowski(a, b, p)
         if p == 1:
             name = "Manhattan (L1)"
         elif p == 2:
@@ -636,18 +639,18 @@ def demo_minkowski_family():
         print(f"  {p_str:>8s}  {d:>12.4f}  {name:>15s}")
 
     print()
-    print("  As p increases, the distance is dominated by the largest component difference.")
-    print("  L-inf <= L2 <= L1 always holds.")
+    print("  As p increases, distance dominated by largest component difference.")
     print()
 
 
-def demo_k_selection():
+def demonstrate_k_selection():
+    """Demo: K selection via cross-validation"""
     print("=" * 65)
-    print("SELECTING K: CROSS-VALIDATION APPROACH")
+    print("  FELIX SELECTING K: CROSS-VALIDATION APPROACH")
     print("=" * 65)
     print()
 
-    X, y = generate_classification_data(300, seed=42)
+    X, y = DataGenerator.classification(300, seed=42)
 
     n = len(X)
     random.seed(42)
@@ -661,11 +664,8 @@ def demo_k_selection():
 
     print(f"  {n_folds}-fold cross-validation on {n} samples")
     print()
-    print(f"  {'K':>6s}  {'Mean Acc':>10s}  {'Std Acc':>10s}  {'Visual':>20s}")
-    print(f"  {'-' * 6}  {'-' * 10}  {'-' * 10}  {'-' * 20}")
-
-    best_k = 1
-    best_mean = 0.0
+    print(f"  {'K':>6s}  {'Mean Acc':>10s}  {'Std Acc':>10s}")
+    print(f"  {'-' * 6}  {'-' * 10}  {'-' * 10}")
 
     for k in k_values:
         fold_accs = []
@@ -681,54 +681,43 @@ def demo_k_selection():
             X_val = [X[i] for i in val_idx]
             y_val = [y[i] for i in val_idx]
 
-            knn = KNN(k=k, task="classification")
+            knn = FelixKNNClassifier(k=k)
             knn.fit(X_tr, y_tr)
-            acc_val = accuracy(y_val, knn.predict(X_val))
+            acc_val = PerformanceMetrics.accuracy(y_val, knn.predict(X_val))
             fold_accs.append(acc_val)
 
         mean_acc = sum(fold_accs) / len(fold_accs)
         std_acc = (sum((a - mean_acc) ** 2 for a in fold_accs) / len(fold_accs)) ** 0.5
+        print(f"  {k:>6d}  {mean_acc:>10.4f}  {std_acc:>10.4f}")
 
-        bar_len = int(mean_acc * 20)
-        bar = "#" * bar_len
-
-        if mean_acc > best_mean:
-            best_mean = mean_acc
-            best_k = k
-
-        print(f"  {k:>6d}  {mean_acc:>10.4f}  {std_acc:>10.4f}  {bar}")
-
-    print()
-    print(f"  Best K = {best_k} with mean accuracy = {best_mean:.4f}")
     print()
 
 
 def print_summary():
+    """Print summary of KNN concepts"""
     print()
     print("=" * 65)
-    print("SUMMARY")
+    print("  FELIX KNN SUMMARY")
     print("=" * 65)
     print()
     print("  1. KNN is lazy: zero training, all work at prediction time.")
     print("  2. K controls bias-variance: small K overfits, large K underfits.")
     print("  3. Distance metric choice matters. L2 is default, cosine for text.")
     print("  4. Always scale features. Unscaled features distort distances.")
-    print("  5. Weighted KNN reduces sensitivity to K by down-weighting distant neighbors.")
+    print("  5. Weighted KNN reduces sensitivity to K.")
     print("  6. Curse of dimensionality: KNN degrades beyond ~20-50 dimensions.")
-    print("  7. KD-trees speed up search in low dimensions. Ball trees for moderate.")
-    print("  8. KNN is the same algorithm behind vector databases and RAG retrieval.")
+    print("  7. KD-trees speed up search in low dimensions.")
+    print("  8. KNN is the algorithm behind vector databases and RAG retrieval.")
     print()
 
 
 if __name__ == "__main__":
-    demo_basic_knn()
-    demo_distance_metrics()
-    demo_weighted_knn()
-    demo_regression()
-    demo_minkowski_family()
-    demo_curse_of_dimensionality()
-    demo_scaling_importance()
-    demo_kdtree()
-    demo_lazy_vs_eager()
-    demo_k_selection()
+    demonstrate_basic_knn()
+    demonstrate_distance_metrics()
+    demonstrate_weighted_knn()
+    demonstrate_regression()
+    demonstrate_minkowski_family()
+    demonstrate_curse_of_dimensionality()
+    demonstrate_kdtree()
+    demonstrate_k_selection()
     print_summary()
