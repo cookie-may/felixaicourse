@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the 'Dialogue State' in a task-oriented chatbot?",
+      "options": [
+        "A set of slot-value pairs that represent the user's current goals and constraints.",
+        "The battery level of the user's device.",
+        "The physical location of the server.",
+        "The number of words the user has typed."
+      ],
+      "correct": 0,
+      "explanation": "The dialogue state acts as the 'memory' of the system, keeping track of what the user has requested so far (e.g., 'Italian food', 'in the north area')."
+    },
+    {
+      "stage": "post",
+      "question": "What does Joint Goal Accuracy (JGA) measure?",
+      "options": [
+        "The fraction of turns where *every* slot in the predicted state is correct.",
+        "The speed of the state update.",
+        "The number of slots the model guessed correctly.",
+        "The total number of goals the user has achieved."
+      ],
+      "correct": 0,
+      "explanation": "JGA is a strict metric: even if 4 out of 5 slots are correct, the turn is marked as wrong. This reflects the reality that one wrong slot can ruin a booking."
+    },
+    {
+      "stage": "post",
+      "question": "What is a 'correction' in the context of DST?",
+      "options": [
+        "When a user updates a previously mentioned slot (e.g., 'Actually, make it 7pm').",
+        "When the system corrects the user's grammar.",
+        "When the model is retrained on new data.",
+        "When the user deletes their account."
+      ],
+      "correct": 0,
+      "explanation": "Dialogue is fluid. Users often change their minds or correct the system's misunderstandings, and the DST must be able to overwrite its current belief."
+    },
+    {
+      "stage": "post",
+      "question": "Why is it often better to let an LLM regenerate the whole state from history rather than incrementally updating?",
+      "options": [
+        "It naturally handles corrections and cross-turn coreferences.",
+        "It is much cheaper in terms of tokens.",
+        "It prevents the model from generating any text.",
+        "It only works for very short conversations."
+      ],
+      "correct": 0,
+      "explanation": "By reading the whole history, the LLM has all the context needed to resolve 'it', 'actually no', and other conversational nuances that are hard to track with incremental rules."
+    }
+  ]
+}

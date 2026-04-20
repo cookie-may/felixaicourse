@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What enables 'zero-shot cross-lingual transfer' in models like XLM-R?",
+      "options": [
+        "A shared vocabulary and shared representation space across many languages.",
+        "Training the model on a translation dictionary for every language.",
+        "Running the model through a translator first.",
+        "Using a separate model for every language."
+      ],
+      "correct": 0,
+      "explanation": "By training on many languages at once with a shared tokenizer, the model learns a language-agnostic space where semantic concepts are linked across languages."
+    },
+    {
+      "stage": "post",
+      "question": "Which model set the cross-lingual baseline in 2019 by training on a massive CommonCrawl corpus?",
+      "options": [
+        "XLM-R",
+        "mBERT",
+        "NLLB-200",
+        "Aya-23"
+      ],
+      "correct": 0,
+      "explanation": "XLM-RoBERTa (XLM-R) was a major milestone, showing that massive-scale pretraining on 100 languages could produce powerful cross-lingual capabilities."
+    },
+    {
+      "stage": "post",
+      "question": "What is the 'fertility tax' for low-resource languages in multilingual models?",
+      "options": [
+        "They are split into many more tokens per word than high-resource languages, increasing cost and latency.",
+        "The model charges more per token for these languages.",
+        "The model refuses to generate more than 10 words in these languages.",
+        "The training data for these languages is more expensive to buy."
+      ],
+      "correct": 0,
+      "explanation": "Because tokenizers are often biased toward English/Latin scripts, other languages (like Hindi or Arabic) are broken into much smaller fragments, eating up the context window."
+    },
+    {
+      "stage": "post",
+      "question": "Why might fine-tuning on a typologically close language (like Hindi for an Marathi target) be better than English?",
+      "options": [
+        "Language similarity predicts transfer quality better than raw corpus size.",
+        "It is always faster to fine-tune on Hindi.",
+        "English models are not available for these tasks.",
+        "It reduces the number of tokens in the vocabulary."
+      ],
+      "correct": 0,
+      "explanation": "Linguistic similarity (shared grammar, scripts, or word roots) often provides a stronger transfer signal than the sheer volume of English training data."
+    }
+  ]
+}

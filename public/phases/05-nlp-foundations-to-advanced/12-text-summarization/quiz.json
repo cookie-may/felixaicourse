@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the fundamental difference between extractive and abstractive summarization?",
+      "options": [
+        "Extractive picks sentences verbatim; abstractive rewrites content.",
+        "Extractive is for long documents; abstractive is for short ones.",
+        "Extractive requires a GPU; abstractive doesn't.",
+        "Extractive is always better than abstractive."
+      ],
+      "correct": 0,
+      "explanation": "Extractive systems are like highlighters (selecting existing text), while abstractive systems are like writers (generating new text that captures the meaning)."
+    },
+    {
+      "stage": "post",
+      "question": "Why is abstractive summarization considered 'higher risk' for applications like medical or legal summaries?",
+      "options": [
+        "It can hallucinate or misstate facts while sounding very confident.",
+        "It is too slow for real-time use.",
+        "It always produces longer summaries than extractive.",
+        "It cannot handle technical vocabulary."
+      ],
+      "correct": 0,
+      "explanation": "Abstractive models are prone to hallucinations (entity swaps, number drift, polarity flips). In high-stakes domains, a verbatim extractive summary is often preferred for safety."
+    },
+    {
+      "stage": "post",
+      "question": "What does the ROUGE-L metric primarily measure?",
+      "options": [
+        "Longest Common Subsequence overlap between system and reference.",
+        "The length of the summary.",
+        "The number of adjectives in the summary.",
+        "The reading grade level of the text."
+      ],
+      "correct": 0,
+      "explanation": "ROUGE-L looks for the longest common sequence of words, which rewards summaries that preserve the structure and flow of the reference text."
+    },
+    {
+      "stage": "post",
+      "question": "How does TextRank identify the most important sentences in a document?",
+      "options": [
+        "By building a graph of sentence similarities and running a PageRank-like algorithm.",
+        "By picking the first three sentences of every paragraph.",
+        "By counting the total number of words in each sentence.",
+        "By checking if a sentence contains any numbers."
+      ],
+      "correct": 0,
+      "explanation": "TextRank treats sentences as nodes in a graph. Edges represent similarity. Sentences that are 'voted for' by many other similar sentences are ranked higher."
+    }
+  ]
+}

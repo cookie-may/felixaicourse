@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is 'teacher forcing' in the context of training seq2seq models?",
+      "options": [
+        "Using ground-truth tokens as input to the decoder instead of its own previous predictions.",
+        "Forcing the teacher to label more data.",
+        "Using a larger learning rate for the encoder than the decoder.",
+        "Preventing the model from learning from its mistakes."
+      ],
+      "correct": 0,
+      "explanation": "Teacher forcing helps the model converge faster by providing the correct token from the training data at each step of the decoder, rather than letting a wrong prediction derail the rest of the sequence during training."
+    },
+    {
+      "stage": "post",
+      "question": "What is the 'bottleneck' problem in basic RNN encoder-decoder architectures?",
+      "options": [
+        "All information from the input must be compressed into a single fixed-size context vector.",
+        "The encoder is too slow compared to the decoder.",
+        "The model cannot handle more than two languages.",
+        "The vocabulary size is too large for the GPU."
+      ],
+      "correct": 0,
+      "explanation": "In a standard seq2seq model, the decoder only has access to the last hidden state of the encoder. This single vector must represent the entire source sentence, which fails for longer inputs."
+    },
+    {
+      "stage": "post",
+      "question": "What is 'exposure bias' in sequence generation?",
+      "options": [
+        "The gap between training (where ground truth is used) and inference (where model predictions are used).",
+        "When a model is exposed to too much training data.",
+        "When a model's weights are exposed during a security breach.",
+        "When the model only sees one type of sentence structure."
+      ],
+      "correct": 0,
+      "explanation": "Exposure bias occurs because the model never practices recovering from its own errors during training (due to teacher forcing), which can lead to poor quality or 'drifting' during inference."
+    },
+    {
+      "stage": "post",
+      "question": "How does beam search improve over greedy decoding?",
+      "options": [
+        "It keeps multiple candidate sequences alive instead of just picking the single best token at each step.",
+        "It is much faster than greedy decoding.",
+        "It uses a literal beam of light to find the correct tokens.",
+        "It removes the need for an encoder."
+      ],
+      "correct": 0,
+      "explanation": "Beam search maintains a 'beam' of the top-k most likely sequences, exploring more of the search space than greedy decoding, which can be trapped by a single high-probability but suboptimal choice."
+    }
+  ]
+}

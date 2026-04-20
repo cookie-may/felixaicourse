@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the difference between a Part-of-Speech (POS) tag and a dependency parse?",
+      "options": [
+        "POS tags label individual words; dependency parses model the relationships between words.",
+        "POS tags are for verbs; dependency parses are for nouns.",
+        "POS tags are used in transformers; dependency parses are only for classical NLP.",
+        "They are different names for the same thing."
+      ],
+      "correct": 0,
+      "explanation": "POS tagging is a token-level classification task (noun, verb, etc.), while dependency parsing is a structural task that determines which words modify which (e.g., subject, object, modifier)."
+    },
+    {
+      "stage": "post",
+      "question": "In the Universal Dependencies (UD) tagset, how many tags are there compared to the Penn Treebank (PTB)?",
+      "options": [
+        "UD has fewer (17) tags and is language-agnostic; PTB is English-specific and more fine-grained.",
+        "UD has more tags than PTB.",
+        "UD and PTB have the same number of tags.",
+        "UD is only for nouns; PTB is for all parts of speech."
+      ],
+      "correct": 0,
+      "explanation": "UD was designed for cross-lingual consistency with 17 broad categories. PTB is more fine-grained (36 tags) and specific to the nuances of English grammar (e.g., separating singular vs. plural nouns)."
+    },
+    {
+      "stage": "post",
+      "question": "What is the 'most-frequent-tag' baseline accuracy typically found on the Brown corpus?",
+      "options": [
+        "~85%",
+        "~50%",
+        "~98%",
+        "~10%"
+      ],
+      "correct": 0,
+      "explanation": "Simply assigning the most common tag seen in training for each word achieves about 85% accuracy, serving as a lower bound for more complex POS tagging models."
+    },
+    {
+      "stage": "post",
+      "question": "Why is dependency parsing often preferred over constituency parsing in modern NLP?",
+      "options": [
+        "It generalizes better across different languages, including those with free word order.",
+        "It is much slower but more accurate.",
+        "It only works for English.",
+        "It produces a flat list instead of a tree."
+      ],
+      "correct": 0,
+      "explanation": "Dependency parses represent the relationship between words directly, which is more robust for languages where word order is flexible compared to the rigid phrase-structure trees of constituency parsing."
+    }
+  ]
+}

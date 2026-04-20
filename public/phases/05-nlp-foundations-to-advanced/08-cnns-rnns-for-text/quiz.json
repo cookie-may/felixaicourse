@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the primary advantage of using a 1D CNN (TextCNN) for text classification compared to a basic BoW model?",
+      "options": [
+        "It can learn local n-gram patterns through its filters.",
+        "It is slower and more complex.",
+        "It ignores word order completely.",
+        "It doesn't require any embeddings."
+      ],
+      "correct": 0,
+      "explanation": "TextCNNs use convolutional filters that slide over sequences of word embeddings, allowing them to detect patterns of 2, 3, or more words (n-grams) regardless of their position."
+    },
+    {
+      "stage": "post",
+      "question": "How does an LSTM (Long Short-Term Memory) network solve the 'vanishing gradient' problem of plain RNNs?",
+      "options": [
+        "By using a cell state and gates to control the flow of information.",
+        "By using more layers than a standard RNN.",
+        "By removing the recurrent connections.",
+        "By using a larger learning rate."
+      ],
+      "correct": 0,
+      "explanation": "LSTMs feature a 'cell state' that allows gradients to flow through long sequences with minimal interference, controlled by input, forget, and output gates."
+    },
+    {
+      "stage": "post",
+      "question": "Why is max-pooling often used after a TextCNN's convolutional layers?",
+      "options": [
+        "To pick the strongest feature activation and achieve position-invariance.",
+        "To reduce the number of filters in the next layer.",
+        "To convert the output back into text.",
+        "To increase the sequence length."
+      ],
+      "correct": 0,
+      "explanation": "Global max-pooling over a feature map extracts the highest score for a particular 'n-gram' filter anywhere in the sentence, making the model invariant to where the word pattern appeared."
+    },
+    {
+      "stage": "post",
+      "question": "In what scenario might an LSTM still be preferred over a transformer?",
+      "options": [
+        "For streaming/online classification where tokens must be processed one at a time.",
+        "When training on massive datasets like the entire web.",
+        "When you need the absolute highest accuracy on any task.",
+        "When memory and compute are unlimited."
+      ],
+      "correct": 0,
+      "explanation": "RNNs like LSTMs process input sequentially and maintain a state, making them suitable for streaming data. Transformers require the full sequence to compute their attention mechanisms."
+    }
+  ]
+}

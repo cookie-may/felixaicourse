@@ -1,0 +1,64 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the core idea behind T5 (Text-To-Text Transfer Transformer)?",
+      "options": [
+        "Convert all NLP tasks into a unified text-to-text format: input text in, output text out",
+        "Use a larger BERT model",
+        "Replace attention with convolutions",
+        "Train separate models per task"
+      ],
+      "correct": 0,
+      "explanation": "T5 reformulates every NLP task as text-to-text. Translation becomes 'translate English to German: ...', summarization becomes 'summarize: ...', classification becomes predicting a label word. A single model and objective (cross-entropy on output tokens) handles all tasks."
+    },
+    {
+      "stage": "pre",
+      "question": "What is BART's pre-training objective?",
+      "options": [
+        "Next-token prediction (causal LM)",
+        "Masked language modeling",
+        "Reconstruct original text from noised/corrupted inputs via encoder-decoder",
+        "Contrastive learning between sentence pairs"
+      ],
+      "correct": 2,
+      "explanation": "BART uses denoising auto-encoding: corrupt the input (token masking, deletion, rotation, text infilling) and train the decoder to reconstruct the original sequence. This makes BART especially good at generation tasks like summarization and translation."
+    },
+    {
+      "stage": "post",
+      "question": "When would you choose an encoder-decoder model (T5/BART) over a decoder-only model (GPT)?",
+      "options": [
+        "For tasks with long context windows",
+        "For tasks requiring conditioning on a full input sequence (summarization, translation, Q&A) where bidirectional encoding of the source helps",
+        "For tasks requiring fast inference",
+        "For classification tasks"
+      ],
+      "correct": 1,
+      "explanation": "Encoder-decoder models shine when you have a source sequence to fully encode before generating — summarization, translation, structured prediction. The encoder can attend bidirectionally to the source, which helps understanding. Decoder-only models are simpler and dominate open-ended generation."
+    },
+    {
+      "stage": "post",
+      "question": "What span corruption objective does T5 use during pre-training?",
+      "options": [
+        "Mask individual tokens like BERT's MLM",
+        "Mask contiguous spans of tokens and replace each span with a single sentinel token",
+        "Drop full sentences from the input",
+        "Shuffle the order of tokens"
+      ],
+      "correct": 1,
+      "explanation": "T5 masks spans (not individual tokens) and replaces each masked span with a unique sentinel token (e.g., <extra_id_0>). The decoder must predict the masked spans in sequence. This is harder than token-level MLM and leads to better representations for generation."
+    },
+    {
+      "stage": "post",
+      "question": "What key difference between T5 and BART affects their best use cases?",
+      "options": [
+        "T5 is English-only; BART is multilingual",
+        "T5 was pre-trained with a text-to-text reconstruction objective emphasizing understanding; BART was pre-trained with stronger noise corruption better tuned for generation",
+        "T5 uses ReLU, BART uses GELU",
+        "T5 uses absolute positional encoding; BART uses RoPE"
+      ],
+      "correct": 1,
+      "explanation": "T5's span-masking objective produces strong representations for understanding and generation. BART's heavier noise (text infilling, sentence shuffling) makes it especially strong at generation tasks. In practice BART tends to outperform on summarization; T5 on multi-task NLP benchmarks."
+    }
+  ]
+}

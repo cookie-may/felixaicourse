@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the main purpose of Inverse Document Frequency (IDF) in TF-IDF?",
+      "options": [
+        "To scale down weights of words that appear frequently across all documents.",
+        "To increase the weight of common words like 'the' and 'is'.",
+        "To remove words that are not in the vocabulary.",
+        "To count how many words are in a single document."
+      ],
+      "correct": 0,
+      "explanation": "IDF measures how informative a word is. Words that appear in many documents (like 'the') carry less signal and are scaled down, while rare words are scaled up."
+    },
+    {
+      "stage": "post",
+      "question": "If a word appears in every single document in a corpus of 100 documents, what will its IDF value be in the smoothed implementation log((n+1)/(d+1)) + 1?",
+      "options": [
+        "1.0",
+        "0.0",
+        "100.0",
+        "log(100)"
+      ],
+      "correct": 0,
+      "explanation": "In the smoothed version, log((100+1)/(100+1)) + 1 = log(1) + 1 = 0 + 1 = 1.0. This ensures the word still has a positive weight."
+    },
+    {
+      "stage": "post",
+      "question": "What is the benefit of L2 normalization in TF-IDF vectors?",
+      "options": [
+        "It ensures that long and short documents are comparable on a unit scale.",
+        "It removes stop words automatically.",
+        "It converts sparse vectors into dense ones.",
+        "It preserves word order in the document."
+      ],
+      "correct": 0,
+      "explanation": "L2 normalization scales the vector so its length (norm) is 1. This prevents longer documents from dominating similarity scores simply because they have higher raw word counts."
+    },
+    {
+      "stage": "post",
+      "question": "In which scenario would TF-IDF likely perform WORSE than a transformer-based embedding model?",
+      "options": [
+        "When capturing the semantic difference between 'not good' and 'excellent'.",
+        "When classifying spam emails based on specific keywords.",
+        "When memory and latency are strictly limited.",
+        "When there are only 50 labeled examples."
+      ],
+      "correct": 0,
+      "explanation": "TF-IDF is 'semantically blind'—it treats words as independent units. It struggles with nuance like negation or word order, which transformers handle much better via attention mechanisms."
+    }
+  ]
+}

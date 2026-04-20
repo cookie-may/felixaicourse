@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the difference between Named Entity Recognition (NER) and Entity Linking (EL)?",
+      "options": [
+        "NER identifies names; EL maps them to a specific entry in a knowledge base.",
+        "NER is for people; EL is for locations.",
+        "NER is faster; EL is more accurate.",
+        "They are different names for the same task."
+      ],
+      "correct": 0,
+      "explanation": "NER just says 'Paris is a city'. Entity Linking goes further and says 'This Paris is the capital of France (Wikidata Q90)'."
+    },
+    {
+      "stage": "post",
+      "question": "What are the two main subtasks of an entity linking pipeline?",
+      "options": [
+        "Candidate generation and Disambiguation.",
+        "Tokenization and Stemming.",
+        "Translation and Summarization.",
+        "Questioning and Answering."
+      ],
+      "correct": 0,
+      "explanation": "First, the system finds all potential entities that match the name (candidate generation); then, it uses context to pick the correct one (disambiguation)."
+    },
+    {
+      "stage": "post",
+      "question": "What does 'NIL' represent in entity linking?",
+      "options": [
+        "A prediction that a mention does not exist in the knowledge base.",
+        "A failure of the candidate generator.",
+        "An acronym for 'Next Item List'.",
+        "A specific type of organization entity."
+      ],
+      "correct": 0,
+      "explanation": "If a mention (e.g., a newly formed startup) is not in Wikipedia or your knowledge base, the system should return 'NIL' rather than linking to a similarly named but incorrect entity."
+    },
+    {
+      "stage": "post",
+      "question": "Which disambiguation approach decodes the entity's canonical name token-by-token?",
+      "options": [
+        "Generative",
+        "Embedding-based",
+        "Prior + context",
+        "Rule-based"
+      ],
+      "correct": 0,
+      "explanation": "Generative models (like GENRE) treat entity linking as a generation task, outputting the Wikipedia title directly while being constrained to only valid entries."
+    }
+  ]
+}

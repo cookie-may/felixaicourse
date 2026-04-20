@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the main output of a Relation Extraction (RE) task?",
+      "options": [
+        "Structured triples in the form (subject, relation, object).",
+        "A single sentiment label for the document.",
+        "A translation of the text into another language.",
+        "A list of all nouns in the sentence."
+      ],
+      "correct": 0,
+      "explanation": "RE is about finding the meaningful links between entities. For example, 'Tim Cook works at Apple' becomes (Tim Cook, employer, Apple)."
+    },
+    {
+      "stage": "post",
+      "question": "What does the AEVS (Anchor-Extraction-Verification-Supplement) framework aim to solve?",
+      "options": [
+        "Hallucination in LLM-based relation extraction by anchoring and verifying spans.",
+        "Making the extraction process 10x faster.",
+        "Translating triples into 200 languages.",
+        "Automatically deleting old data from the knowledge graph."
+      ],
+      "correct": 0,
+      "explanation": "LLMs often hallucinate facts. AEVS (2026) is a design pattern that forces the model to link every extracted triple to specific character spans in the source text for verification."
+    },
+    {
+      "stage": "post",
+      "question": "Why is coreference resolution (lesson 24) a critical prerequisite for RE?",
+      "options": [
+        "Because many relations are expressed using pronouns like 'he' or 'it' which must be resolved to entities.",
+        "It is not required; RE can handle pronouns natively.",
+        "It makes the knowledge graph smaller.",
+        "It helps the model learn the sentiment of the relation."
+      ],
+      "correct": 0,
+      "explanation": "If a sentence says 'He founded the company', RE cannot extract a useful triple without knowing that 'He' refers to 'Steve Jobs' and 'the company' refers to 'Apple'."
+    },
+    {
+      "stage": "post",
+      "question": "What is the difference between a 'closed ontology' and 'open IE'?",
+      "options": [
+        "Closed uses a fixed set of relation types; Open allows any phrase to be a relation.",
+        "Closed is only for private data; Open is for the web.",
+        "Closed is for people; Open is for organizations.",
+        "They are different names for the same process."
+      ],
+      "correct": 0,
+      "explanation": "Closed ontologies (like Wikidata) provide a predictable, queryable schema. Open IE (Information Extraction) is more flexible but results in messy, redundant graphs that are harder to query."
+    }
+  ]
+}

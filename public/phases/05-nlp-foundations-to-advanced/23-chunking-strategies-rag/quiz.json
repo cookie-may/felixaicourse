@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "Why is chunking necessary for RAG systems using most embedding models?",
+      "options": [
+        "Models have a limited context window and lose detail in long documents.",
+        "Chunking makes the documents look better in the UI.",
+        "It is a required step for all vector databases.",
+        "It removes stop words from the text."
+      ],
+      "correct": 0,
+      "explanation": "Embedding models (like BERT) typically only see 512 tokens. Even long-context models struggle to compress a whole book into one vector without losing the specific details needed for RAG."
+    },
+    {
+      "stage": "post",
+      "question": "According to 2026 benchmarks, which chunking strategy is often the best default?",
+      "options": [
+        "Recursive chunking (splitting on paragraph, then sentence, then word).",
+        "Fixed-size character chunking.",
+        "Semantic chunking without min-token limits.",
+        "Random chunking."
+      ],
+      "correct": 0,
+      "explanation": "Recursive chunking balances performance and coherence by trying to split text at natural boundaries (like double newlines) before falling back to smaller units."
+    },
+    {
+      "stage": "post",
+      "question": "What is the 'parent-document' pattern in chunking?",
+      "options": [
+        "Retrieving small child chunks but providing the larger parent context to the LLM.",
+        "Only indexing the first page of every document.",
+        "Using the document's metadata instead of its content.",
+        "Letting the LLM decide where to split the document."
+      ],
+      "correct": 0,
+      "explanation": "Small chunks are better for precise retrieval, but the LLM often needs the surrounding context (the parent section) to generate a complete and accurate answer."
+    },
+    {
+      "stage": "post",
+      "question": "What is the 'context cliff' observed in 2026 RAG research?",
+      "options": [
+        "A sharp drop in response quality around 2,500 context tokens.",
+        "When a model stops generating text completely.",
+        "When the retriever fails to find any documents.",
+        "When the vector database runs out of memory."
+      ],
+      "correct": 0,
+      "explanation": "Adding more context is not always better. Researchers found that providing too many retrieved chunks can distract the model, leading to a drop in accuracy around 2.5k tokens."
+    }
+  ]
+}

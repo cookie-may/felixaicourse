@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "Why is a 'hybrid' search (BM25 + Dense) often superior to using either one alone?",
+      "options": [
+        "It combines precise keyword matching (BM25) with semantic similarity (Dense).",
+        "It is much faster than running a single search.",
+        "It reduces the storage space needed for indexes.",
+        "It works without needing any embedding models."
+      ],
+      "correct": 0,
+      "explanation": "BM25 catches exact matches (codes, names, rare terms), while dense retrieval catches semantic overlaps (paraphrases). Together, they cover more ground than either alone."
+    },
+    {
+      "stage": "post",
+      "question": "What is the purpose of a 'Cross-Encoder' in a modern search pipeline?",
+      "options": [
+        "To rerank a small pool of candidates for higher accuracy by processing query and doc together.",
+        "To encode the entire corpus into vectors more quickly.",
+        "To translate the query into different languages.",
+        "To compress the index on disk."
+      ],
+      "correct": 0,
+      "explanation": "Cross-encoders are expensive because they process query and document pairs simultaneously, but they are far more accurate than bi-encoders for the final selection of top results."
+    },
+    {
+      "stage": "post",
+      "question": "What is Reciprocal Rank Fusion (RRF) used for?",
+      "options": [
+        "Merging ranked lists from different search methods (like BM25 and Dense) into a single list.",
+        "Generating new queries to expand the search.",
+        "Calculating the distance between two vectors.",
+        "Removing duplicate documents from the index."
+      ],
+      "correct": 0,
+      "explanation": "RRF provides a simple way to combine rankings from disparate systems without needing to normalize their raw scores (which are often on completely different scales)."
+    },
+    {
+      "stage": "post",
+      "question": "In 2026 production RAG, where do most failures typically trace back to?",
+      "options": [
+        "Ingestion and chunking strategy.",
+        "The choice of the LLM (e.g., GPT-4 vs. Claude 3).",
+        "The learning rate of the embedding model.",
+        "The size of the GPU memory."
+      ],
+      "correct": 0,
+      "explanation": "Most 'LLM' problems in RAG are actually retrieval problems. Poor chunking (breaking tables, mid-sentence splits) ensures the retriever provides garbage context to the model."
+    }
+  ]
+}

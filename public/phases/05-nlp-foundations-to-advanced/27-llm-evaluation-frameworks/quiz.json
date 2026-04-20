@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "Why are traditional metrics like Exact Match (EM) and F1 often insufficient for LLM evaluation?",
+      "options": [
+        "They miss semantic equivalence (e.g., 'June 29' vs 'June 29th').",
+        "They are too expensive to calculate.",
+        "They require a GPU to run.",
+        "They only work for sentiment analysis."
+      ],
+      "correct": 0,
+      "explanation": "Traditional metrics are based on string matching. They fail when a model provides a correct answer that uses different words than the reference text."
+    },
+    {
+      "stage": "post",
+      "question": "In the 'LLM-as-judge' paradigm, what is a common bias to watch out for?",
+      "options": [
+        "Judges preferring longer answers or answers from their own model family.",
+        "Judges preferring shorter, concise answers.",
+        "Judges refusing to score any answer that contains the word 'the'.",
+        "Judges always giving a score of 0.5."
+      ],
+      "correct": 0,
+      "explanation": "Judge models have inherent biases, including a 'verbosity bias' (favoring long-winded answers) and a 'self-preference bias' (favoring outputs from models of the same family)."
+    },
+    {
+      "stage": "post",
+      "question": "What does the 'Faithfulness' metric in RAGAS measure?",
+      "options": [
+        "Whether every factual claim in the answer is supported by the retrieved context.",
+        "How polite the model is to the user.",
+        "How quickly the retriever finds the documents.",
+        "The number of tokens in the prompt."
+      ],
+      "correct": 0,
+      "explanation": "Faithfulness is the primary metric for detecting hallucinations in RAG systems, checking if the model stayed 'faithful' to the documents it was given."
+    },
+    {
+      "stage": "post",
+      "question": "What is the recommended first step before trusting an automated LLM judge?",
+      "options": [
+        "Calibration: measuring the correlation (e.g., Spearman rho) between the judge and human labels.",
+        "Using the most expensive model available.",
+        "Asking the user if they like the scores.",
+        "Turning off the safety filters."
+      ],
+      "correct": 0,
+      "explanation": "Automated metrics can be noisy. Calibration ensures that the LLM judge's scores actually align with what a human expert would consider good or bad."
+    }
+  ]
+}

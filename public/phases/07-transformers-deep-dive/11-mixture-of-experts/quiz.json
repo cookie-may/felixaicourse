@@ -1,0 +1,64 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the key idea behind Mixture of Experts (MoE)?",
+      "options": [
+        "Training multiple smaller models and averaging their outputs",
+        "Replacing the dense FFN with multiple expert FFNs and a router that activates only k experts per token",
+        "Using different attention heads for different input types",
+        "Ensembling predictions from different transformer architectures"
+      ],
+      "correct": 1,
+      "explanation": "MoE replaces the dense FFN layer with N expert FFNs and a gating network (router). For each token, the router selects the top-k experts (typically k=2). Parameters scale with N experts but compute stays constant — you get more capacity without proportional compute cost."
+    },
+    {
+      "stage": "pre",
+      "question": "What is the 'load balancing' problem in MoE routing?",
+      "options": [
+        "Too much memory usage on a single GPU",
+        "The router learning to send all tokens to the same few experts, leaving others unused",
+        "Experts becoming too large during training",
+        "Imbalanced gradient flow through different layers"
+      ],
+      "correct": 1,
+      "explanation": "Without constraints, the router learns to exploit easy patterns and routes most tokens to the same expert. This creates a 'rich get richer' collapse — most experts train rarely and become useless. Solutions include auxiliary load-balancing losses and noise-based routing."
+    },
+    {
+      "stage": "post",
+      "question": "In Switch Transformer, why does routing to k=1 expert (top-1) rather than k=2 work well?",
+      "options": [
+        "It's more accurate than top-2",
+        "Top-1 routing maximizes training efficiency by halving communication cost; the capacity loss is offset by using more experts",
+        "Top-1 prevents catastrophic forgetting",
+        "Top-1 routing enables better positional encoding"
+      ],
+      "correct": 1,
+      "explanation": "Switch Transformer showed top-1 routing is competitive with top-2 when you scale the number of experts. Top-1 halves the routing communication overhead in distributed training, making it preferable at scale when experts are distributed across devices."
+    },
+    {
+      "stage": "post",
+      "question": "How does DeepSeek-V2/V3 use MoE differently from early designs?",
+      "options": [
+        "They use only 1 expert per layer",
+        "They use a fine-grained MoE with many small experts and shared 'dense' experts plus routed experts per token",
+        "They replace attention with MoE",
+        "They use MoE only in the embedding layer"
+      ],
+      "correct": 1,
+      "explanation": "DeepSeek uses a fine-grained MoE: many small experts (256+) plus 2-4 always-active shared experts. Fine-grained MoE gives the router more flexibility. Shared experts handle universal patterns; routed experts specialize. This design achieves better performance per FLOP than dense models."
+    },
+    {
+      "stage": "post",
+      "question": "What is 'expert capacity' in distributed MoE inference?",
+      "options": [
+        "The number of parameters per expert",
+        "The maximum number of tokens an expert can process per batch — overflow tokens are dropped or routed elsewhere",
+        "The GPU memory reserved for each expert",
+        "The number of experts per transformer layer"
+      ],
+      "correct": 1,
+      "explanation": "In distributed MoE, each expert has a capacity factor limiting tokens per batch. If more tokens route to an expert than its capacity allows, overflow tokens are skipped (their representation passes through unchanged). Setting capacity too low causes dropped tokens; too high wastes compute."
+    }
+  ]
+}

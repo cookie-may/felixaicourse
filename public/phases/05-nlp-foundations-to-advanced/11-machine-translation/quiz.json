@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the main problem that encoder-decoder models with attention solved for machine translation?",
+      "options": [
+        "Fixed-length output requirement.",
+        "The inability to handle different word orders and lengths between languages.",
+        "The need for a dictionary for every word.",
+        "Translating images into text."
+      ],
+      "correct": 1,
+      "explanation": "Standard encoder-decoder models compressed everything into a single vector. Attention allows the model to 'look back' at specific parts of the source sentence, handling flexible alignments and long-range dependencies across languages."
+    },
+    {
+      "stage": "post",
+      "question": "Why is 'sacrebleu' the recommended tool for reporting BLEU scores?",
+      "options": [
+        "It normalizes tokenization so scores are comparable across different implementations.",
+        "It is faster than other BLEU implementations.",
+        "It is the only tool that can calculate chrF.",
+        "It doesn't require a reference translation."
+      ],
+      "correct": 0,
+      "explanation": "Different tokenizers produce different BLEU scores. SacreBLEU ensures that everyone uses the same tokenization scheme, making research benchmarks actually comparable."
+    },
+    {
+      "stage": "post",
+      "question": "What is 'hallucination' in the context of machine translation?",
+      "options": [
+        "When the model produces fluent-sounding text that is not supported by the source.",
+        "When the model refuses to translate a sentence.",
+        "When the model translates into the wrong target language.",
+        "When the model uses too many emojis."
+      ],
+      "correct": 0,
+      "explanation": "Hallucination occurs when a model adds facts, names, or details that weren't in the original text, often because the domain vocabulary is unfamiliar to the model."
+    },
+    {
+      "stage": "post",
+      "question": "Which metric is considered the 2026 production default for neural evaluation of MT quality?",
+      "options": [
+        "COMET",
+        "ROUGE",
+        "Word Error Rate (WER)",
+        "TF-IDF similarity"
+      ],
+      "correct": 0,
+      "explanation": "COMET (Cross-lingual Optimized Metric for Evaluation of Translation) is a learned metric that correlates much more highly with human judgment than n-gram overlap metrics like BLEU."
+    }
+  ]
+}

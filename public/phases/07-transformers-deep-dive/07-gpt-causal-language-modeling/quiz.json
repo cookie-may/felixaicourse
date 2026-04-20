@@ -1,0 +1,64 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the Causal Language Modeling (CLM) pre-training objective used by GPT?",
+      "options": [
+        "Mask random tokens and predict them from bidirectional context",
+        "Predict each token given all previous tokens — next-token prediction",
+        "Translate text between languages",
+        "Classify documents by topic"
+      ],
+      "correct": 1,
+      "explanation": "CLM (autoregressive language modeling) trains the model to predict token t given tokens 1..t-1. Every position in the sequence provides a training signal simultaneously, making it extremely data-efficient. This is the pretraining objective for all GPT models."
+    },
+    {
+      "stage": "pre",
+      "question": "How does GPT's attention differ from BERT's?",
+      "options": [
+        "GPT uses cross-attention, BERT uses self-attention",
+        "GPT uses causal (masked) self-attention that can only attend to previous tokens; BERT uses full bidirectional attention",
+        "GPT uses multi-head attention, BERT uses single-head",
+        "They use identical attention mechanisms"
+      ],
+      "correct": 1,
+      "explanation": "GPT applies a causal mask so token i can only attend to tokens 1..i. This unidirectional constraint enables autoregressive generation and means the model is trained using exactly the same mechanism used at inference time."
+    },
+    {
+      "stage": "post",
+      "question": "What architectural changes distinguish GPT-2 from the original GPT?",
+      "options": [
+        "GPT-2 uses cross-attention and a separate decoder",
+        "GPT-2 moved layer normalization to the input of each sublayer (Pre-LN) and used a modified weight initialization",
+        "GPT-2 replaced the FFN with convolutions",
+        "GPT-2 uses BERT's bidirectional attention"
+      ],
+      "correct": 1,
+      "explanation": "GPT-2 key changes: Pre-LN (LayerNorm before sublayers for training stability), scaled weight initialization (multiplied by 1/√n_layers), larger context window (1024 tokens), and trained on WebText. These made training at scale more stable."
+    },
+    {
+      "stage": "post",
+      "question": "What is 'few-shot prompting' as demonstrated by GPT-3?",
+      "options": [
+        "Fine-tuning GPT on a few examples",
+        "Providing a few input-output examples in the prompt itself — the model infers the task pattern without weight updates",
+        "Training with a small dataset",
+        "Using a smaller model for efficiency"
+      ],
+      "correct": 1,
+      "explanation": "GPT-3 showed that large language models can perform new tasks by showing a few examples in the prompt (in-context learning). The model's weights don't change — it just uses the examples as context to pattern-match on the task format."
+    },
+    {
+      "stage": "post",
+      "question": "Why is temperature sampling important during GPT generation?",
+      "options": [
+        "It controls the learning rate during training",
+        "It scales the logits before softmax: temperature < 1 sharpens the distribution (more deterministic), temperature > 1 flattens it (more random)",
+        "It determines how many tokens to generate",
+        "It controls the attention window size"
+      ],
+      "correct": 1,
+      "explanation": "Dividing logits by temperature T before softmax: T→0 gives argmax (greedy), T=1 is the model's true distribution, T>1 flattens probabilities toward uniform (more creative/unpredictable). Temperature is a key knob for controlling generation diversity."
+    }
+  ]
+}

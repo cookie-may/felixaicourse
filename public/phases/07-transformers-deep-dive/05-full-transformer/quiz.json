@@ -1,0 +1,64 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What are the two main sublayers in each transformer encoder block?",
+      "options": [
+        "Convolution and pooling",
+        "Multi-head self-attention and a position-wise feed-forward network",
+        "LSTM and attention",
+        "Embedding and softmax"
+      ],
+      "correct": 1,
+      "explanation": "Each encoder block has: (1) multi-head self-attention, and (2) a position-wise feed-forward network (two linear layers with a ReLU/GELU in between). Both sublayers use residual connections and layer normalization."
+    },
+    {
+      "stage": "pre",
+      "question": "What is the difference between the encoder and decoder in the original transformer?",
+      "options": [
+        "The encoder processes text, the decoder processes images",
+        "The decoder has an additional cross-attention sublayer that attends to encoder outputs",
+        "The encoder uses causal masking, the decoder doesn't",
+        "They are identical — transformers only use encoders"
+      ],
+      "correct": 1,
+      "explanation": "The decoder has three sublayers: (1) masked self-attention (causal), (2) cross-attention over encoder outputs, (3) feed-forward. The cross-attention allows the decoder to 'read' the encoded source while generating the target sequence."
+    },
+    {
+      "stage": "post",
+      "question": "Why does the transformer decoder use causal (masked) self-attention?",
+      "options": [
+        "To reduce memory usage",
+        "To prevent the decoder from attending to future tokens when generating each output token",
+        "To speed up inference",
+        "To improve gradient flow"
+      ],
+      "correct": 1,
+      "explanation": "During training, the full target sequence is provided, but generation is auto-regressive — each token should only see previous tokens, not future ones. Causal masking sets future attention scores to -∞ before softmax, zeroing their weights."
+    },
+    {
+      "stage": "post",
+      "question": "What does Pre-LN (Pre-Layer Norm) vs Post-LN refer to in transformer architecture?",
+      "options": [
+        "Whether layer norm is applied before or after the residual connection",
+        "Whether layer norm is applied before or after the attention sublayer's input",
+        "Whether layer norm replaces batch norm",
+        "Whether to use RMS norm or layer norm"
+      ],
+      "correct": 1,
+      "explanation": "Post-LN (original paper): LN after residual add. Pre-LN (modern LLMs like GPT-2+): LN before the sublayer, inside the residual branch. Pre-LN gives more stable training at scale and is the de facto standard in modern architectures."
+    },
+    {
+      "stage": "post",
+      "question": "What is the typical ratio of the FFN hidden dimension to d_model?",
+      "options": [
+        "1:1",
+        "2:1",
+        "4:1 (e.g., d_model=512 → FFN hidden dim 2048)",
+        "8:1"
+      ],
+      "correct": 2,
+      "explanation": "The original paper used d_ff = 4 × d_model. This ratio has remained standard — e.g., d_model=4096, d_ff=16384 in LLaMA. The FFN's large hidden layer stores factual knowledge and acts as key-value memory."
+    }
+  ]
+}

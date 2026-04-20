@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the main limitation of rule-based chatbots like ELIZA?",
+      "options": [
+        "They fail immediately outside their narrow, hand-authored patterns.",
+        "They are too slow for real-time interaction.",
+        "They require a massive GPU to run.",
+        "They can only speak English."
+      ],
+      "correct": 0,
+      "explanation": "Rule-based bots use pattern matching (regex). While fast and predictable, they cannot handle any input that the author didn't explicitly anticipate."
+    },
+    {
+      "stage": "post",
+      "question": "What is an 'LLM agent' loop as of 2026?",
+      "options": [
+        "A language model that plans, calls tools, observes results, and repeats until the task is done.",
+        "A chatbot that has a very long system prompt.",
+        "A model that only responds in JSON.",
+        "A system that retrieves 100 documents for every query."
+      ],
+      "correct": 0,
+      "explanation": "Agents go beyond just chatting; they use reasoning to interact with external tools (like APIs or databases) to actually execute actions in the world."
+    },
+    {
+      "stage": "post",
+      "question": "Why is 'hybrid routing' recommended for production chatbots?",
+      "options": [
+        "It uses rules for safety-critical actions, retrieval for FAQs, and agents for open-ended queries.",
+        "It is the cheapest way to run a chatbot.",
+        "It allows the chatbot to run on both mobile and desktop.",
+        "It prevents the user from asking too many questions."
+      ],
+      "correct": 0,
+      "explanation": "Hybrid systems combine the strengths of different eras: rules provide reliability for critical tasks, while agents provide flexibility for complex queries."
+    },
+    {
+      "stage": "post",
+      "question": "What is 'prompt injection' in the context of LLM applications?",
+      "options": [
+        "When a user provides input that overrides or bypasses the system's instructions.",
+        "When a developer adds more prompts to the model.",
+        "When the model generates too much text.",
+        "When the model's training data is leaked."
+      ],
+      "correct": 0,
+      "explanation": "Prompt injection is a security vulnerability where untrusted user input trick the LLM into ignoring its original safety or task constraints."
+    }
+  ]
+}

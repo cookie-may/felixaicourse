@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the 'Needle-in-a-Haystack' (NIAH) test designed to measure?",
+      "options": [
+        "A model's ability to retrieve a specific fact from a very long context.",
+        "The speed of the model's tokenizer.",
+        "The number of tokens the model can generate per second.",
+        "If the model can find spelling errors in a long document."
+      ],
+      "correct": 0,
+      "explanation": "NIAH is the baseline test for long-context models, checking if a single fact buried deep in a 'haystack' of irrelevant text can still be retrieved correctly."
+    },
+    {
+      "stage": "post",
+      "question": "What is the 'lost in the middle' effect in long-context models?",
+      "options": [
+        "Models under-attend to content located in the middle of long inputs.",
+        "The model crashes when the answer is in the middle.",
+        "The model forgets the first sentence of the document.",
+        "The model's loss function fluctuates in the middle of training."
+      ],
+      "correct": 0,
+      "explanation": "Research has shown that LLMs are much better at remembering information at the very beginning or very end of their context window than information in the middle."
+    },
+    {
+      "stage": "post",
+      "question": "Why is a 1M-token context window claim often misleading?",
+      "options": [
+        "Usable capacity for reasoning and multi-hop tasks often degrades much earlier than retrieval capacity.",
+        "The model only uses 1,000 tokens in reality.",
+        "Tokens are counted differently by each vendor.",
+        "Context windows are only available during training."
+      ],
+      "correct": 0,
+      "explanation": "While a model might be able to find a single 'needle' at 1M tokens, its ability to reason over or summarize that entire 1M-token block is usually much lower."
+    },
+    {
+      "stage": "post",
+      "question": "Which benchmark is considered the 2026 production standard for real-world long-context behavior?",
+      "options": [
+        "LongBench v2",
+        "SQuAD 1.1",
+        "ImageNet",
+        "MNIST"
+      ],
+      "correct": 0,
+      "explanation": "LongBench v2 provides a comprehensive set of tasks (QA, summarization, structural analysis) that simulate real-world usage of long-context models beyond simple retrieval."
+    }
+  ]
+}

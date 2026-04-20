@@ -1,0 +1,64 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "Why do transformers need positional encodings if attention already captures relationships?",
+      "options": [
+        "They don't — positional encoding is optional",
+        "Self-attention is permutation-invariant: 'cat ate fish' and 'fish ate cat' produce identical attention without position info",
+        "Positional encoding improves gradient flow",
+        "Without it, attention weights don't sum to 1"
+      ],
+      "correct": 1,
+      "explanation": "Self-attention treats the input as a set, not a sequence — it has no built-in notion of order. 'The cat ate the fish' and 'The fish ate the cat' would produce identical representations. Positional encodings inject order information."
+    },
+    {
+      "stage": "pre",
+      "question": "What functions are used in the original sinusoidal positional encoding?",
+      "options": [
+        "ReLU and sigmoid",
+        "Sine and cosine at different frequencies",
+        "Learned linear embeddings",
+        "Exponential decay functions"
+      ],
+      "correct": 1,
+      "explanation": "The original 'Attention Is All You Need' paper uses sin for even dimensions and cos for odd dimensions, with frequencies that decrease geometrically. This creates unique encodings for each position while allowing relative positions to be computed via linear transformations."
+    },
+    {
+      "stage": "post",
+      "question": "What is the main advantage of RoPE (Rotary Position Embedding) over absolute positional encoding?",
+      "options": [
+        "RoPE uses less memory",
+        "RoPE encodes relative position directly into the attention dot product via rotation matrices",
+        "RoPE is faster to compute",
+        "RoPE doesn't require any positional information"
+      ],
+      "correct": 1,
+      "explanation": "RoPE applies a rotation to Q and K vectors based on their positions. When you compute Q·K^T, the rotation naturally encodes the relative distance between positions — making it excellent for extrapolating to longer sequences than seen during training."
+    },
+    {
+      "stage": "post",
+      "question": "What is ALiBi (Attention with Linear Biases) and why is it useful?",
+      "options": [
+        "A type of layer normalization",
+        "Adding a linear penalty to attention scores based on distance, enabling length extrapolation without retraining",
+        "A way to reduce the number of attention heads",
+        "An alternative to the FFN sublayer"
+      ],
+      "correct": 1,
+      "explanation": "ALiBi subtracts a linear bias proportional to the key-query distance from attention scores. This biases attention toward nearby tokens without learned parameters, and models trained with ALiBi generalize better to sequences longer than seen during training."
+    },
+    {
+      "stage": "post",
+      "question": "Why do sinusoidal encodings generalize to longer sequences better than purely learned position embeddings?",
+      "options": [
+        "They are computed from the input tokens",
+        "They have a fixed mathematical form that extends beyond the maximum training length",
+        "They use more parameters",
+        "They are normalized differently"
+      ],
+      "correct": 1,
+      "explanation": "Learned position embeddings have a fixed vocabulary — position 513 doesn't exist if you only trained on length 512. Sinusoidal encodings are computed analytically for any position, so they extrapolate beyond training length, though with degraded performance."
+    }
+  ]
+}

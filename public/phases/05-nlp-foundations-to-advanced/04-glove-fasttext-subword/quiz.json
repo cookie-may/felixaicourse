@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "How does FastText handle out-of-vocabulary (OOV) words differently than Word2Vec?",
+      "options": [
+        "It represents a word as a sum of its character n-grams.",
+        "It skips the word and moves to the next one.",
+        "It assigns a random vector to any unknown word.",
+        "It uses a dictionary lookup to find the closest synonym."
+      ],
+      "correct": 0,
+      "explanation": "FastText breaks words into character n-grams (e.g., 'where' -> '<wh', 'whe', 'her'...). Even if the full word was never seen, its sub-parts likely were, allowing the model to construct a vector for the new word."
+    },
+    {
+      "stage": "post",
+      "question": "What is the core idea behind Byte-Pair Encoding (BPE)?",
+      "options": [
+        "Iteratively merging the most frequent adjacent character or subword pairs.",
+        "Encrypting words into bytes for security.",
+        "Using only 256 tokens for the entire vocabulary.",
+        "Sorting the vocabulary by byte size."
+      ],
+      "correct": 0,
+      "explanation": "BPE starts with characters/bytes and merges the most frequent adjacent units into larger subword tokens, creating a vocabulary that balances common words and rare pieces."
+    },
+    {
+      "stage": "post",
+      "question": "Why is GloVe often considered 'global' compared to Word2Vec's 'local' approach?",
+      "options": [
+        "It factorizes a global co-occurrence matrix instead of doing local window updates.",
+        "It was trained on the entire internet at once.",
+        "It uses coordinates from a global map for embeddings.",
+        "It works on all languages without modification."
+      ],
+      "correct": 0,
+      "explanation": "Word2Vec scans the corpus in a sliding window (local). GloVe first compiles a corpus-wide word-word co-occurrence matrix (global) and then factorizes it."
+    },
+    {
+      "stage": "post",
+      "question": "Which tokenization method is the most common choice for modern Large Language Models (LLMs) as of 2026?",
+      "options": [
+        "Subword tokenization (BPE, WordPiece, or SentencePiece).",
+        "Pure character-level tokenization.",
+        "Dictionary-based word-level tokenization.",
+        "Part-of-Speech based tokenization."
+      ],
+      "correct": 0,
+      "explanation": "Subword tokenization is the standard for LLMs like GPT, BERT, and LLaMA because it provides a fixed-size vocabulary that can represent any possible string without 'out-of-vocabulary' errors."
+    }
+  ]
+}

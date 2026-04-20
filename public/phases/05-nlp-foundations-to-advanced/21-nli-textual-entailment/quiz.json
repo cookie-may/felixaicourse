@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What does the Natural Language Inference (NLI) task ask a model to predict?",
+      "options": [
+        "If a premise entails, contradicts, or is neutral to a hypothesis.",
+        "The next word in a sequence.",
+        "The sentiment of a document.",
+        "The named entities in a sentence."
+      ],
+      "correct": 0,
+      "explanation": "NLI (also known as RTE) is a 3-way classification task that determines the relationship between two sentences: does the first one support, oppose, or have no relationship to the second?"
+    },
+    {
+      "stage": "post",
+      "question": "How can NLI be used for 'hallucination checking' in summarization?",
+      "options": [
+        "By checking if the summary claims are entailed by the source document.",
+        "By counting the number of words in the summary.",
+        "By checking if the summary uses any negative words.",
+        "By translating the summary back into the source language."
+      ],
+      "correct": 0,
+      "explanation": "If a summary makes a claim that is not entailed by (or is contradicted by) the original document, it is likely a hallucination. NLI provides a way to automate this check."
+    },
+    {
+      "stage": "post",
+      "question": "What is a 'hypothesis-only shortcut' in NLI datasets?",
+      "options": [
+        "When a model predicts the label from the hypothesis alone without reading the premise.",
+        "When a model ignores the hypothesis and only reads the premise.",
+        "When a dataset has no premises.",
+        "When a model predicts only the 'neutral' label."
+      ],
+      "correct": 0,
+      "explanation": "Some datasets contain biases where certain words in the hypothesis (like 'never' or 'no') strongly correlate with specific labels (like 'contradiction'), allowing models to cheat without actually understanding the relationship between the sentences."
+    },
+    {
+      "stage": "post",
+      "question": "Which NLI model is considered a '2026 workhorse' for general-purpose inference?",
+      "options": [
+        "DeBERTa-v3",
+        "BERT-base",
+        "GPT-2",
+        "Word2Vec"
+      ],
+      "correct": 0,
+      "explanation": "DeBERTa-v3 is currently the state-of-the-art encoder model for many NLI and natural language understanding tasks due to its advanced attention mechanism and training objective."
+    }
+  ]
+}

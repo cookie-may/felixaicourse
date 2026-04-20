@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "Why is Naive Bayes called 'naive'?",
+      "options": [
+        "Because it assumes all features are independent given the class label.",
+        "Because it can only handle binary classification.",
+        "Because it doesn't require any training data.",
+        "Because it is the simplest possible algorithm in existence."
+      ],
+      "correct": 0,
+      "explanation": "The 'naive' part refers to the strong (and usually false) assumption that the presence of one word is completely independent of the presence of another, given the class."
+    },
+    {
+      "stage": "post",
+      "question": "What is the purpose of 'negation scoping' in sentiment analysis?",
+      "options": [
+        "To distinguish between words like 'good' and 'NOT_good' so the classifier can weight them differently.",
+        "To remove all negative words from the text.",
+        "To find the scope of a mathematical equation in the text.",
+        "To count how many 'not' words appear in a sentence."
+      ],
+      "correct": 0,
+      "explanation": "Negation scoping helps simple classifiers handle phrases like 'not good' by treating words following a negation as distinct features (e.g., 'NOT_good'), preventing them from being confused with their positive counterparts."
+    },
+    {
+      "stage": "post",
+      "question": "Why is Macro-F1 often preferred over Accuracy for evaluating sentiment models?",
+      "options": [
+        "It respects class imbalance by giving equal weight to minority and majority classes.",
+        "It is always a higher number than accuracy.",
+        "It only measures the performance of the positive class.",
+        "It doesn't require a ground truth label."
+      ],
+      "correct": 0,
+      "explanation": "Accuracy can be misleading if one class (e.g., positive reviews) is much larger than another. Macro-F1 averages the F1 scores of each class equally, highlighting poor performance on minority classes."
+    },
+    {
+      "stage": "post",
+      "question": "In which case would you likely need to switch from a classical linear model to a transformer?",
+      "options": [
+        "Detecting sarcasm or subtle shifts in sentiment mid-document.",
+        "Classifying 10,000 movie reviews with clear 'loved it' or 'hated it' language.",
+        "When memory and latency are extremely constrained.",
+        "When you only have 100 labeled examples."
+      ],
+      "correct": 0,
+      "explanation": "Transformers are better at capturing long-range dependencies, sarcasm, and complex linguistic nuances that bag-of-words or linear models typically miss."
+    }
+  ]
+}

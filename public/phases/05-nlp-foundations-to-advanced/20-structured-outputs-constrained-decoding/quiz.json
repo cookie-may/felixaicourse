@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "How does 'constrained decoding' differ from simple prompting for structured output?",
+      "options": [
+        "It modifies the model's logits during generation to ensure only valid tokens can be emitted.",
+        "It asks the model more firmly to provide JSON.",
+        "It retries the request until it works.",
+        "It uses a separate model to fix the output."
+      ],
+      "correct": 0,
+      "explanation": "Prompting is a request; constrained decoding is a hard constraint enforced at the sampling level, making invalid output mathematically impossible for the model to produce."
+    },
+    {
+      "stage": "post",
+      "question": "Why is field order important in a JSON schema for LLMs?",
+      "options": [
+        "Putting 'reasoning' before 'answer' allows the model to 'think' before committing to a decision.",
+        "JSON requires fields to be in alphabetical order.",
+        "It makes the JSON smaller and faster to transmit.",
+        "It is only important for human readability."
+      ],
+      "correct": 0,
+      "explanation": "Since LLMs generate tokens sequentially, putting the 'thought process' or 'reasoning' first acts like a 'chain-of-thought', often leading to a more accurate final 'answer'."
+    },
+    {
+      "stage": "post",
+      "question": "What is the primary advantage of FSM-based libraries like Outlines?",
+      "options": [
+        "They provide O(1) valid-next-token lookup, making constrained decoding extremely fast.",
+        "They can handle infinitely recursive grammars.",
+        "They only work with OpenAI models.",
+        "They don't require any schema."
+      ],
+      "correct": 0,
+      "explanation": "Outlines compiles schemas into Finite State Machines (FSMs), which allows the system to instantly know which tokens are valid at any given step without heavy computation."
+    },
+    {
+      "stage": "post",
+      "question": "Which approach is best when you need provider-agnostic Pydantic validation and can tolerate retries?",
+      "options": [
+        "Instructor",
+        "Outlines",
+        "XGrammar",
+        "Native OpenAI JSON mode"
+      ],
+      "correct": 0,
+      "explanation": "Instructor is a Pydantic-based wrapper that works with any LLM provider (OpenAI, Anthropic, etc.) by using prompts and automated retries to get valid output."
+    }
+  ]
+}

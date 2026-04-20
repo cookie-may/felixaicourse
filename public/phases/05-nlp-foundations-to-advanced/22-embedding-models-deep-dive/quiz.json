@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the main difference between 'dense' and 'sparse' embeddings?",
+      "options": [
+        "Dense are fixed-size vectors; sparse are high-dimensional weighted bags of words.",
+        "Dense are for English; sparse are for other languages.",
+        "Dense are slow; sparse are fast.",
+        "They are identical in performance."
+      ],
+      "correct": 0,
+      "explanation": "Dense embeddings capture semantic meaning in a compact vector (e.g., 768 dimensions), while sparse embeddings (like SPLADE) act like a learned version of BM25, weighting every word in the vocabulary."
+    },
+    {
+      "stage": "post",
+      "question": "What is the benefit of 'Matryoshka Representation Learning'?",
+      "options": [
+        "It allows for truncation of vectors (e.g., 1536 -> 256) with minimal accuracy loss, saving storage.",
+        "It makes the embeddings 10x more accurate on all tasks.",
+        "It allows the model to learn 100 languages at once.",
+        "It prevents prompt injection."
+      ],
+      "correct": 0,
+      "explanation": "Matryoshka models are trained so that the most important information is packed into the earlier dimensions, allowing users to chop off the end of the vector to save space while keeping most of the signal."
+    },
+    {
+      "stage": "post",
+      "question": "What does a 'multi-vector' or 'late interaction' model like ColBERT store?",
+      "options": [
+        "One vector per token in the document.",
+        "One vector per document.",
+        "A single float per word.",
+        "No vectors at all."
+      ],
+      "correct": 0,
+      "explanation": "Late interaction models store embeddings for every single token, allowing for fine-grained matching between query and document tokens, which significantly improves recall at the cost of storage."
+    },
+    {
+      "stage": "post",
+      "question": "Why should you benchmark on your own domain instead of just trusting the MTEB leaderboard?",
+      "options": [
+        "Leaderboard ranks are general; specific domains (medical, legal) often have different winners.",
+        "The leaderboard is always out of date.",
+        "The leaderboard only measures speed, not accuracy.",
+        "Benchmarking yourself is required by law."
+      ],
+      "correct": 0,
+      "explanation": "Embedding models that perform well on Wikipedia might fail on specialized technical jargon or long legal documents. Domain-specific evaluation is the only way to ensure retrieval quality."
+    }
+  ]
+}

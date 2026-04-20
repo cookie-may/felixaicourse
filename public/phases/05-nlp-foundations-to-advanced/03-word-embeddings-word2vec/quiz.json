@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the 'distributional hypothesis' in NLP?",
+      "options": [
+        "A word is known by the company it keeps (context matters).",
+        "Words with many letters are more important.",
+        "Every word has a unique dictionary definition.",
+        "Frequency of words follows a Zipfian distribution."
+      ],
+      "correct": 0,
+      "explanation": "The distributional hypothesis suggests that words appearing in similar contexts tend to have similar meanings, which is the foundational idea behind word embeddings like Word2Vec."
+    },
+    {
+      "stage": "post",
+      "question": "Why is 'negative sampling' used in Word2Vec training?",
+      "options": [
+        "To avoid calculating a full softmax over the entire vocabulary for every update.",
+        "To remove words with negative meanings from the training set.",
+        "To make the embeddings more sparse.",
+        "To handle out-of-vocabulary words."
+      ],
+      "correct": 0,
+      "explanation": "Computing softmax over a large vocabulary (e.g., 100k words) is computationally expensive. Negative sampling turns it into a binary classification problem (target word vs. a few random 'negative' words)."
+    },
+    {
+      "stage": "post",
+      "question": "In the analogy 'king - man + woman = queen', what is the model actually doing?",
+      "options": [
+        "Performing vector arithmetic on dense representations to find a nearby neighbor.",
+        "Looking up a pre-defined table of synonyms and antonyms.",
+        "Using a grammar rule to change the gender of the word.",
+        "Predicting the next word in a sequence using a transformer."
+      ],
+      "correct": 0,
+      "explanation": "Word2Vec maps words into a high-dimensional vector space where semantic relationships (like gender or royalty) are captured as linear offsets between vectors."
+    },
+    {
+      "stage": "post",
+      "question": "What is the main limitation of 'static' embeddings like Word2Vec?",
+      "options": [
+        "They assign the same vector to a word regardless of its meaning in context (polysemy).",
+        "They are too slow for inference.",
+        "They require a GPU to run.",
+        "They cannot be used for cosine similarity."
+      ],
+      "correct": 0,
+      "explanation": "Static embeddings give one fixed vector per word. This fails for polysemous words (e.g., 'bank' as a river edge vs. a financial institution), which contextual embeddings like BERT solved later."
+    }
+  ]
+}

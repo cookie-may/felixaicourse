@@ -1,0 +1,64 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What problem does the KV cache solve during autoregressive inference?",
+      "options": [
+        "Memory overflow from large models",
+        "Redundant recomputation of key and value matrices for all previous tokens at each generation step",
+        "Slow tokenization",
+        "High GPU utilization"
+      ],
+      "correct": 1,
+      "explanation": "Without KV cache, generating token t requires recomputing K and V for all t-1 previous tokens. The KV cache stores computed K and V tensors, so each new step only computes K/V for the newest token and appends it — reducing generation from O(n²) to O(n) recomputation."
+    },
+    {
+      "stage": "pre",
+      "question": "What is the memory cost of the KV cache for a typical LLM?",
+      "options": [
+        "Negligible — it reuses model weights",
+        "2 × n_layers × n_heads × seq_len × d_head × bytes_per_element (grows linearly with context length)",
+        "Fixed regardless of sequence length",
+        "Proportional to the number of output tokens only"
+      ],
+      "correct": 1,
+      "explanation": "KV cache stores K and V for every layer and every token. For LLaMA-3 70B with 32K context in fp16: ~2 × 80 layers × 8 heads × 32K × 128 × 2 bytes ≈ 160 GB. KV cache memory is often the binding constraint for serving long-context models."
+    },
+    {
+      "stage": "post",
+      "question": "What is the core optimization in Flash Attention?",
+      "options": [
+        "Quantizing attention weights to INT8",
+        "Tiling the attention computation to avoid materializing the full n×n attention matrix in HBM, keeping intermediate results in fast SRAM",
+        "Pruning attention heads with low importance scores",
+        "Using sparse attention patterns"
+      ],
+      "correct": 1,
+      "explanation": "Standard attention writes the full n×n softmax matrix to HBM (slow memory). Flash Attention tiles the computation: processes blocks that fit in SRAM (fast), computing softmax incrementally. Memory usage drops from O(n²) to O(n) and wall-clock time improves 2-4× despite same FLOP count."
+    },
+    {
+      "stage": "post",
+      "question": "What is Grouped Query Attention (GQA) and which models use it?",
+      "options": [
+        "Multiple query heads sharing a single key-value head group, reducing KV cache size — used in LLaMA-2/3, Mistral, Gemma",
+        "Grouping attention heads by query type for better specialization",
+        "Using separate attention for different input groups",
+        "A method for merging attention heads during fine-tuning"
+      ],
+      "correct": 0,
+      "explanation": "GQA groups multiple query heads to share a single K/V head. With 8 query heads per KV group, KV cache shrinks 8× vs Multi-Head Attention with minimal quality loss. LLaMA-2/3, Mistral, and Gemma all use GQA to make large-context inference practical."
+    },
+    {
+      "stage": "post",
+      "question": "What is speculative decoding and how does it use the KV cache?",
+      "options": [
+        "A method to compress the KV cache",
+        "A small draft model generates k tokens quickly; the target model verifies all k in parallel — accepted tokens reuse the draft's KV cache",
+        "Running multiple beam search paths simultaneously",
+        "Pre-filling the KV cache with common phrases"
+      ],
+      "correct": 1,
+      "explanation": "A small (fast) draft model proposes k tokens. The large target model evaluates all k in one forward pass (parallel verification). Accepted tokens are appended to the KV cache; rejected tokens are regenerated. This achieves 2-4× speedup because the target model runs fewer sequential steps."
+    }
+  ]
+}

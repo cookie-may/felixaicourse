@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the core idea behind an n-gram language model?",
+      "options": [
+        "Predicting the next word based on the counts of the previous n-1 words.",
+        "Using a neural network to predict the next character.",
+        "Translating a sentence into n different languages.",
+        "Counting how many times a word appears in the entire document."
+      ],
+      "correct": 0,
+      "explanation": "N-gram models are probabilistic and rely on the frequency of word sequences (n-grams) in a training corpus to estimate the likelihood of the next word."
+    },
+    {
+      "stage": "post",
+      "question": "What is the 'zero-count problem' in n-gram models?",
+      "options": [
+        "Any sequence of words not seen in training gets zero probability, making the whole sentence probability zero.",
+        "The model cannot count higher than zero.",
+        "The model ignores words that appear zero times in the dictionary.",
+        "The model's loss function starts at zero."
+      ],
+      "correct": 0,
+      "explanation": "Because language is so vast, most word sequences will never appear in a training set. Without smoothing, these unseen sequences break the model by assigning them zero probability."
+    },
+    {
+      "stage": "post",
+      "question": "How does Kneser-Ney smoothing improve over simpler methods like Laplace?",
+      "options": [
+        "It uses 'continuation probability' (how many contexts a word appears in) for the lower-order model.",
+        "It simply adds a larger number than 1 to every count.",
+        "It removes all rare words from the vocabulary.",
+        "It uses a transformer to predict the unseen n-grams."
+      ],
+      "correct": 0,
+      "explanation": "Kneser-Ney is clever: it realizes that a word like 'Francisco' appears frequently but only in one context ('San Francisco'), so it should have a low probability in other contexts."
+    },
+    {
+      "stage": "post",
+      "question": "What does a perplexity of 100 on a held-out test set mean?",
+      "options": [
+        "The model is as 'confused' as if it were choosing uniformly from 100 possible words at each step.",
+        "The model is 100% accurate.",
+        "The model made 100 mistakes in total.",
+        "The model took 100 seconds to generate the text."
+      ],
+      "correct": 0,
+      "explanation": "Perplexity is a measure of uncertainty. A lower perplexity means the model is more certain about its predictions; 100 means the model narrows down the choices to about 100 words on average."
+    }
+  ]
+}

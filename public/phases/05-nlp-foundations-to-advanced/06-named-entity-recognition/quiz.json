@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What does BIO tagging stand for in Named Entity Recognition (NER)?",
+      "options": [
+        "Beginning, Inside, Outside.",
+        "Binary Input Output.",
+        "Basic Information Object.",
+        "Build, Inspect, Optimize."
+      ],
+      "correct": 0,
+      "explanation": "BIO tagging is a standard scheme where 'B-' marks the beginning of an entity, 'I-' marks the inside, and 'O' marks tokens that are not part of any entity."
+    },
+    {
+      "stage": "post",
+      "question": "Why is a Conditional Random Field (CRF) often used as the final layer in an NER model?",
+      "options": [
+        "To enforce consistent label sequences (e.g., preventing I-ORG after O).",
+        "To speed up training on long sentences.",
+        "To remove stop words from the input.",
+        "To convert tokens into dense embeddings."
+      ],
+      "correct": 0,
+      "explanation": "A CRF models the transitions between labels, ensuring that the predicted sequence is globally optimal and follows rules like 'an I-tag must follow a B-tag or another I-tag of the same type'."
+    },
+    {
+      "stage": "post",
+      "question": "What is the benefit of using 'word shapes' (e.g., 'iPhone' -> 'xXxxxx') as features in classical NER?",
+      "options": [
+        "It captures capitalization and alphanumeric patterns that are strong signals for proper nouns.",
+        "It makes the model faster by reducing the vocabulary size.",
+        "It helps the model understand the meaning of the word.",
+        "It is a required step for transformer models."
+      ],
+      "correct": 0,
+      "explanation": "Proper nouns (names, organizations, locations) often follow specific capitalization patterns. Word shapes allow the model to learn these patterns without needing to see every possible word in training."
+    },
+    {
+      "stage": "post",
+      "question": "Why is entity-level F1 considered a more accurate metric for NER than token-level accuracy?",
+      "options": [
+        "Because token-level accuracy overstates performance by counting 'O' tags, and entity-level F1 requires exact span matches.",
+        "Because entity-level F1 is easier to calculate.",
+        "Because token-level accuracy only works for binary labels.",
+        "Because entity-level F1 doesn't require ground truth labels."
+      ],
+      "correct": 0,
+      "explanation": "Most tokens in a sentence are 'O' (outside). High token-level accuracy can be achieved just by predicting 'O' everywhere. Entity-level F1 requires the model to correctly identify the entire span and type of an entity."
+    }
+  ]
+}

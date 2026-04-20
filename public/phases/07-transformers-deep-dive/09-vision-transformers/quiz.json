@@ -1,0 +1,64 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "How does ViT (Vision Transformer) convert an image into a sequence for the transformer?",
+      "options": [
+        "It processes each pixel individually",
+        "It splits the image into fixed-size patches, flattens and linearly projects each patch into a token embedding",
+        "It uses a CNN to extract feature maps then flattens them",
+        "It converts each row of pixels into a token"
+      ],
+      "correct": 1,
+      "explanation": "ViT divides the image into 16×16 (or 32×32) patches. Each patch is flattened and projected to d_model via a linear layer, creating a sequence of patch tokens. A [CLS] token is prepended and positional embeddings are added before the standard transformer encoder."
+    },
+    {
+      "stage": "pre",
+      "question": "Why did early ViT models require large datasets (JFT-300M) to outperform CNNs?",
+      "options": [
+        "Transformers are inherently slower than CNNs",
+        "CNNs have strong inductive biases (local connectivity, translation equivariance) that ViT lacks — ViT must learn these from data",
+        "ViT uses more parameters than CNNs",
+        "ViT cannot process color images"
+      ],
+      "correct": 1,
+      "explanation": "CNNs encode translation equivariance and local feature extraction by design. ViT is a general sequence model with no spatial inductive bias — every patch can attend to every other from layer 1. This flexibility requires more data to learn the spatial structure CNNs get for free."
+    },
+    {
+      "stage": "post",
+      "question": "What does DINO (Self-DIstillation with NO labels) demonstrate about ViT?",
+      "options": [
+        "ViT can be compressed using knowledge distillation",
+        "ViT self-attention heads learn semantically meaningful object segmentation without any supervision",
+        "ViT can process video by treating frames as tokens",
+        "DINO replaces positional encoding with learned tokens"
+      ],
+      "correct": 1,
+      "explanation": "DINO trained ViT with self-supervised learning showed that attention heads spontaneously learn to attend to object boundaries and semantically coherent regions — without any labels. This emergent segmentation property was unexpected and sparked major interest in ViT for dense prediction."
+    },
+    {
+      "stage": "post",
+      "question": "What is the 'register token' technique introduced to improve ViT attention quality?",
+      "options": [
+        "Additional CLS tokens for multi-label classification",
+        "Extra learned tokens added to the sequence that absorb 'background' attention, preventing artifacts in feature maps",
+        "Position tokens for absolute position encoding",
+        "Tokens that represent class labels"
+      ],
+      "correct": 1,
+      "explanation": "Research found that certain patch tokens in ViT become 'attention sinks' — they absorb disproportionate attention and corrupt feature maps for dense tasks. Register tokens are additional learnable tokens that absorb this excess attention, dramatically improving attention map quality for segmentation."
+    },
+    {
+      "stage": "post",
+      "question": "How does Swin Transformer address ViT's quadratic attention scaling for high-resolution images?",
+      "options": [
+        "By using smaller patch sizes",
+        "By computing attention only within local windows that shift between layers to capture cross-window interactions",
+        "By applying strided convolutions before attention",
+        "By reducing the number of transformer layers"
+      ],
+      "correct": 1,
+      "explanation": "Swin computes self-attention within fixed-size local windows (e.g., 7×7 patches), making complexity linear in image size. Windows shift between layers so cross-window connections are captured. Swin also introduces a hierarchical structure with patch merging, analogous to CNN feature pyramids."
+    }
+  ]
+}

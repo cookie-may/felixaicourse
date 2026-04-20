@@ -1,0 +1,64 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What did Kaplan et al. (OpenAI 2020) find about LLM performance and scale?",
+      "options": [
+        "Performance improves linearly with parameters",
+        "Loss follows smooth power laws as a function of model size, dataset size, and compute — each independently",
+        "More parameters always improve performance regardless of data",
+        "Performance plateaus beyond 10B parameters"
+      ],
+      "correct": 1,
+      "explanation": "The Kaplan scaling laws showed neural LM loss scales as a power law with N (parameters), D (tokens), and C (compute): L ∝ N^α, D^β, C^γ. The key finding: compute is best spent primarily on larger models, with data playing a secondary role — which Chinchilla later overturned."
+    },
+    {
+      "stage": "pre",
+      "question": "What was the Chinchilla finding that contradicted the Kaplan scaling law recommendation?",
+      "options": [
+        "Larger models always beat smaller ones",
+        "The optimal compute allocation is roughly equal tokens and parameters: train ~20 tokens per parameter, not underpowering data in favor of model size",
+        "Data quality matters more than quantity",
+        "Scaling stops working beyond 500B parameters"
+      ],
+      "correct": 1,
+      "explanation": "Kaplan suggested spending most compute on large models with relatively less data. Chinchilla (Hoffmann et al. 2022) ran 400+ experiments and found the optimal is ~20 tokens/parameter: a 70B model needs ~1.4T tokens. GPT-3 (175B on 300B tokens) was significantly undertrained."
+    },
+    {
+      "stage": "post",
+      "question": "What is the 'compute-optimal' frontier in scaling law analysis?",
+      "options": [
+        "The model size that maximizes accuracy per dollar",
+        "The Pareto frontier of (model size, tokens) pairs that achieve minimum loss for a given FLOPs budget",
+        "The maximum compute that improves performance",
+        "The point where scaling stops being beneficial"
+      ],
+      "correct": 1,
+      "explanation": "For a fixed FLOPs budget C, there's an optimal (N*, D*) where increasing either while decreasing the other gives worse loss. The compute-optimal frontier traces these optima across all compute budgets. Chinchilla showed N* ∝ C^0.5, D* ∝ C^0.5 — scale both equally."
+    },
+    {
+      "stage": "post",
+      "question": "Why do practical deployments often use models smaller than compute-optimal (trained on more tokens)?",
+      "options": [
+        "Smaller models are easier to fine-tune",
+        "Inference cost is paid many times; a smaller model trained longer is cheaper to serve at scale even if more expensive to train",
+        "Larger models overfit on more tokens",
+        "Regulatory requirements limit model size"
+      ],
+      "correct": 1,
+      "explanation": "Training is done once; inference runs millions/billions of times. A 7B model trained on 2T tokens (like LLaMA-3) costs much less per inference query than a 70B model trained on 700B tokens to the same loss. Inference-optimality favors smaller, longer-trained models over training-optimal models."
+    },
+    {
+      "stage": "post",
+      "question": "What do 'emergent capabilities' refer to in the scaling law context?",
+      "options": [
+        "Models developing new transformer architectures autonomously",
+        "Abilities that appear abruptly at certain scale thresholds rather than improving smoothly — e.g., multi-step arithmetic, chain-of-thought",
+        "Models improving on tasks they weren't trained on",
+        "Gradient descent finding better loss landscapes at scale"
+      ],
+      "correct": 1,
+      "explanation": "Some capabilities (multi-digit addition, multi-step reasoning) appear near-zero in small models and then emerge sharply at certain scales. Whether this reflects true phase transitions or evaluation metric discontinuities is debated, but emergent capabilities motivated the push to very large models."
+    }
+  ]
+}

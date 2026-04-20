@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the main difference between stemming and lemmatization?",
+      "options": [
+        "Stemming is rule-based and faster; lemmatization is dictionary-based and context-aware.",
+        "Stemming is dictionary-based; lemmatization is rule-based.",
+        "Stemming always produces a real word; lemmatization doesn't.",
+        "They are identical processes."
+      ],
+      "correct": 0,
+      "explanation": "Stemming uses simple rules to chop off suffixes (often resulting in non-words like 'poni'), while lemmatization uses a dictionary and morphological analysis to find the root form (lemma) based on the word's part of speech."
+    },
+    {
+      "stage": "post",
+      "question": "In the provided 'stem_step_1a' function, why does 'ponies' become 'poni' instead of 'pony'?",
+      "options": [
+        "Because the rule 'ies -> i' is applied.",
+        "Because the rule 'ies -> y' is applied.",
+        "Because it is a mistake in the Porter algorithm.",
+        "Because 'poni' is the dictionary form."
+      ],
+      "correct": 0,
+      "explanation": "The simple Porter step 1a rule replaces 'ies' with 'i'. This is a classic example of stemming's 'dumb' rule-based approach which may not result in a dictionary word."
+    },
+    {
+      "stage": "post",
+      "question": "Why is a Part-of-Speech (POS) tag often necessary for accurate lemmatization?",
+      "options": [
+        "To distinguish between different meanings or forms of the same spelling (e.g., 'saw' as a noun vs. verb).",
+        "To speed up the suffix stripping process.",
+        "To remove stop words from the sentence.",
+        "To convert the word to lowercase."
+      ],
+      "correct": 0,
+      "explanation": "Lemmatizers need to know if a word is a noun, verb, or adjective to find the correct root. For example, 'saw' (verb) lemmatizes to 'see', but 'saw' (noun) lemmatizes to 'saw'."
+    },
+    {
+      "stage": "post",
+      "question": "What is 'reproducibility drift' in the context of NLP preprocessing?",
+      "options": [
+        "When different library versions produce different tokens for the same input.",
+        "When a model fails to learn the training data.",
+        "When a stemmer produces a non-dictionary root.",
+        "When a tokenizer misses punctuation."
+      ],
+      "correct": 0,
+      "explanation": "Libraries like spaCy and NLTK update their internal models and rules. Using a different version for inference than was used for training can lead to a distribution shift and degraded model performance."
+    }
+  ]
+}

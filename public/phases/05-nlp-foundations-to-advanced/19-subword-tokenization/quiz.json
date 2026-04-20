@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "Why are subword tokenizers (like BPE) preferred over word-level tokenizers?",
+      "options": [
+        "They handle unseen words by breaking them into smaller, known pieces.",
+        "They are much slower but more accurate.",
+        "They only work for English.",
+        "They eliminate the need for any vocabulary at all."
+      ],
+      "correct": 0,
+      "explanation": "Word-level tokenizers fail on any word not in their fixed dictionary. Subword tokenizers can represent 'untokenizable' as 'un' + 'token' + 'izable', ensuring the model always has a signal."
+    },
+    {
+      "stage": "post",
+      "question": "What does 'byte-level BPE' (used in GPT-2 and Llama) guarantee?",
+      "options": [
+        "Zero [UNK] (unknown) tokens, as any string can be represented by its raw bytes.",
+        "That every word will be exactly one token.",
+        "That the model will run 10x faster.",
+        "That the model only understands 256 words."
+      ],
+      "correct": 0,
+      "explanation": "By starting with the 256 possible bytes rather than Unicode characters, the tokenizer can always fall back to individual bytes for any character it hasn't seen before."
+    },
+    {
+      "stage": "post",
+      "question": "What is the main difference between BPE and Unigram tokenization?",
+      "options": [
+        "BPE is a bottom-up merge approach; Unigram is a top-down probabilistic pruning approach.",
+        "BPE is only for characters; Unigram is only for words.",
+        "BPE requires a GPU; Unigram doesn't.",
+        "They are identical except for the library that implements them."
+      ],
+      "correct": 0,
+      "explanation": "BPE starts small and builds up by merging frequent pairs. Unigram starts with a huge set of candidates and prunes them down to maximize the likelihood of the training data."
+    },
+    {
+      "stage": "post",
+      "question": "What is 'fertility' in tokenization?",
+      "options": [
+        "The average number of tokens produced per word in a given language.",
+        "The number of new words a model can learn per day.",
+        "The size of the vocabulary.",
+        "The number of languages supported by the tokenizer."
+      ],
+      "correct": 0,
+      "explanation": "High fertility is bad: it means the tokenizer is inefficient for that language, using many tokens to represent a single word, which shortens the effective context window."
+    }
+  ]
+}

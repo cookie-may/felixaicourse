@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the core idea of the attention mechanism in seq2seq models?",
+      "options": [
+        "Allowing the decoder to look at every encoder hidden state, not just the last one.",
+        "Making the model pay attention to the user's instructions.",
+        "Speeding up the training of the RNN layers.",
+        "Reducing the number of parameters in the model."
+      ],
+      "correct": 0,
+      "explanation": "Attention solves the bottleneck problem by allowing the decoder to dynamically weight and aggregate all input states from the encoder at each step of the output generation."
+    },
+    {
+      "stage": "post",
+      "question": "What is the difference between Bahdanau (additive) and Luong (dot-product) attention?",
+      "options": [
+        "Bahdanau uses a small neural network to compute scores; Luong uses simple dot products or matrix multiplications.",
+        "Bahdanau is faster but less accurate.",
+        "Luong only works for translation; Bahdanau works for everything.",
+        "They are identical except for the names."
+      ],
+      "correct": 0,
+      "explanation": "Bahdanau attention calculates scores via a learned MLP (additive), while Luong attention uses more efficient matrix-multiplication based scoring (dot, general)."
+    },
+    {
+      "stage": "post",
+      "question": "In attention notation (Q, K, V), what do these letters usually represent in a basic seq2seq model?",
+      "options": [
+        "Query = decoder state, Key/Value = encoder states.",
+        "Query = input text, Key = dictionary, Value = output text.",
+        "Query = question, Key = key words, Value = answer.",
+        "They represent the weights of the RNN layers."
+      ],
+      "correct": 0,
+      "explanation": "The decoder 'queries' the encoder's 'keys' to determine which 'values' (encoder states) to attend to for the current generation step."
+    },
+    {
+      "stage": "post",
+      "question": "Why is it cautioned to not use attention weights as a perfect explanation of a model's reasoning?",
+      "options": [
+        "Because attention weights can be permuted or changed without affecting predictions in some cases.",
+        "Because they are too difficult to visualize.",
+        "Because they always sum to zero.",
+        "Because they are only available during training."
+      ],
+      "correct": 0,
+      "explanation": "Research has shown that attention weights do not always correlate with feature importance and can sometimes be manipulated without changing the model's output, so they should be interpreted with care."
+    }
+  ]
+}

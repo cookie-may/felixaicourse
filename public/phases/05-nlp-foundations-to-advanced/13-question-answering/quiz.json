@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the SQuAD dataset primarily used for benchmarking?",
+      "options": [
+        "Extractive Question Answering (finding spans in a passage).",
+        "Generating creative stories from prompts.",
+        "Translating questions between languages.",
+        "Detecting if a question is rude."
+      ],
+      "correct": 0,
+      "explanation": "SQuAD (Stanford Question Answering Dataset) is the gold standard for extractive QA, where the goal is to identify the start and end indices of an answer within a given context."
+    },
+    {
+      "stage": "post",
+      "question": "In a RAG (Retrieval-Augmented Generation) system, what are the two main components?",
+      "options": [
+        "A retriever (finds relevant docs) and a reader/generator (produces the answer).",
+        "A tokenizer and an embedding model.",
+        "A compiler and a debugger.",
+        "A question-asker and an answer-checker."
+      ],
+      "correct": 0,
+      "explanation": "RAG works in two stages: first, the retriever pulls relevant passages from a massive corpus; second, the reader (or LLM) processes those passages to answer the question."
+    },
+    {
+      "stage": "post",
+      "question": "Why is 'refusal calibration' important in production QA?",
+      "options": [
+        "It ensures the system says 'I don't know' when the answer isn't in the provided context, reducing hallucinations.",
+        "It prevents the system from answering questions in the wrong language.",
+        "It limits the number of questions a user can ask per hour.",
+        "It speeds up the retrieval process."
+      ],
+      "correct": 0,
+      "explanation": "If a system is forced to answer even when it lacks context, it will likely hallucinate. Proper calibration ensures the system admits its ignorance when necessary."
+    },
+    {
+      "stage": "post",
+      "question": "What does the RAGAS framework measure in 2026 production QA?",
+      "options": [
+        "Dimensions like faithfulness, relevance, and context precision without needing gold references.",
+        "The speed of the vector database.",
+        "The total number of tokens used by the LLM.",
+        "The accuracy of a model on the SQuAD test set."
+      ],
+      "correct": 0,
+      "explanation": "RAGAS provides reference-free metrics that allow developers to evaluate the performance of their RAG pipelines on real-world production traffic."
+    }
+  ]
+}

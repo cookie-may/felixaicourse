@@ -1,0 +1,64 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the Masked Language Modeling (MLM) pre-training objective?",
+      "options": [
+        "Predict the next token given all previous tokens",
+        "Randomly mask 15% of tokens and predict the original tokens from context in both directions",
+        "Classify the sentiment of each sentence",
+        "Generate a paraphrase of the input"
+      ],
+      "correct": 1,
+      "explanation": "MLM masks ~15% of input tokens (replaced with [MASK], a random token, or kept unchanged) and trains the model to predict the original tokens using both left and right context. This bidirectional context makes BERT great for understanding tasks."
+    },
+    {
+      "stage": "pre",
+      "question": "What does the [CLS] token in BERT represent?",
+      "options": [
+        "The classifier for next-sentence prediction",
+        "A special token prepended to every input whose final hidden state is used as the sequence-level representation",
+        "The end-of-sequence marker",
+        "A masking placeholder"
+      ],
+      "correct": 1,
+      "explanation": "[CLS] is prepended to every input. After the encoder runs, the [CLS] hidden state aggregates information from the entire sequence through attention and is used as the input to classification heads for downstream tasks."
+    },
+    {
+      "stage": "post",
+      "question": "Why can't BERT be used directly for text generation?",
+      "options": [
+        "It doesn't have enough parameters",
+        "It uses bidirectional attention — it sees the full sequence at once, so it can't generate autoregressively",
+        "It doesn't have a decoder",
+        "It only supports English"
+      ],
+      "correct": 1,
+      "explanation": "BERT's bidirectional self-attention means every token attends to all other tokens simultaneously. Generation requires predicting the next token without seeing future tokens — a constraint that requires causal (left-to-right) attention, not bidirectional attention."
+    },
+    {
+      "stage": "post",
+      "question": "What is the Next Sentence Prediction (NSP) task in BERT, and why was it removed in RoBERTa?",
+      "options": [
+        "NSP predicts missing words; RoBERTa found it too slow",
+        "NSP predicts whether two sentences are consecutive; RoBERTa found it was either too easy or harmful to MLM performance",
+        "NSP classifies sentence types; RoBERTa replaced it with paragraph prediction",
+        "NSP was a translation task"
+      ],
+      "correct": 1,
+      "explanation": "NSP trains BERT to predict whether sentence B follows sentence A. RoBERTa's ablation found NSP was either trivially solved or hurt performance, so they removed it and trained longer with more data and larger batches — significantly outperforming BERT."
+    },
+    {
+      "stage": "post",
+      "question": "What is the typical fine-tuning approach for BERT on a classification task?",
+      "options": [
+        "Freeze all layers, train only the embedding layer",
+        "Add a linear classifier on the [CLS] token output and fine-tune all parameters end-to-end",
+        "Replace BERT's final layer with a new transformer block",
+        "Train the entire model from scratch on the downstream task"
+      ],
+      "correct": 1,
+      "explanation": "For classification, add a linear head on the [CLS] token output. Fine-tune all BERT weights jointly with the classifier, using a small learning rate (2-5e-5). The pre-trained weights give a strong initialization that converges in just a few epochs."
+    }
+  ]
+}

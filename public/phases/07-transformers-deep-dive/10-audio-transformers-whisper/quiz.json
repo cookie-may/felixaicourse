@@ -1,0 +1,64 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What audio representation does Whisper use as input to the transformer encoder?",
+      "options": [
+        "Raw waveform samples",
+        "80-channel log-mel spectrograms computed from 30-second audio windows",
+        "MFCC features",
+        "Linear frequency cepstral coefficients"
+      ],
+      "correct": 1,
+      "explanation": "Whisper converts raw audio to 80-channel log-mel spectrograms with 25ms windows and 10ms hop. These are passed through two 1D convolutional layers before entering the transformer encoder. Log-mel spectrograms capture perceptually relevant frequency content efficiently."
+    },
+    {
+      "stage": "pre",
+      "question": "Whisper is trained with a multitask objective. What tasks does it handle?",
+      "options": [
+        "Only transcription",
+        "Transcription, translation, language identification, and voice activity detection — all via special tokens",
+        "Speech synthesis and recognition",
+        "Speaker identification and transcription"
+      ],
+      "correct": 1,
+      "explanation": "Whisper uses special tokens to specify the task: <|transcribe|> for ASR, <|translate|> for speech-to-English translation, language tokens for LID, and <|nospeech|> for VAD. A single model handles all tasks by conditioning on these tokens."
+    },
+    {
+      "stage": "post",
+      "question": "What is the timestamp prediction capability in Whisper used for?",
+      "options": [
+        "Recording when audio was created",
+        "Predicting start/end time tokens that align transcript segments to audio positions",
+        "Measuring inference latency",
+        "Tracking speaker turns"
+      ],
+      "correct": 1,
+      "explanation": "Whisper can predict <|0.00|> ... <|30.00|> timestamp tokens interleaved with transcription tokens. This enables word-level alignment between the transcript and the audio timeline — crucial for subtitle generation and audio search."
+    },
+    {
+      "stage": "post",
+      "question": "Why does Whisper's encoder use convolutional layers before the transformer blocks?",
+      "options": [
+        "To reduce model size",
+        "To downsample the spectrogram sequence length and extract local temporal features before the O(n²) attention",
+        "To add positional encoding",
+        "To normalize the input"
+      ],
+      "correct": 1,
+      "explanation": "A 30-second spectrogram has 3000 frames at 10ms hop — too long for efficient attention. Two strided Conv1D layers (stride 1, stride 2) reduce this to 1500 frames. The convolutions also extract local temporal patterns (phoneme boundaries) that the transformer then contextualizes globally."
+    },
+    {
+      "stage": "post",
+      "question": "What is 'hallucination' in Whisper, and when does it occur most?",
+      "options": [
+        "When Whisper outputs silence instead of text",
+        "When Whisper generates fluent but incorrect text, especially for non-speech audio or very noisy/quiet inputs",
+        "When Whisper produces wrong language codes",
+        "When Whisper generates duplicate words"
+      ],
+      "correct": 1,
+      "explanation": "Whisper was trained on internet audio with mostly speech. On non-speech audio, silence, or very noisy input, it tends to 'hallucinate' plausible-sounding but incorrect transcriptions. This is a known limitation of large language model decoders conditioned on noisy or ambiguous audio."
+    }
+  ]
+}

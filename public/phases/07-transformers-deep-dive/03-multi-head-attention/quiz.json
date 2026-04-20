@@ -1,0 +1,64 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "In single-head attention, what are Q, K, and V?",
+      "options": [
+        "Query, Key, and Value projections of the input",
+        "Queue, Kernel, and Vector transformations",
+        "Quality, Kernel, and Variance parameters",
+        "The three layers of an LSTM"
+      ],
+      "correct": 0,
+      "explanation": "Q (query), K (key), and V (value) are linear projections of the input. The query asks 'what am I looking for?', the key says 'what do I contain?', and the value is what gets returned when a key matches a query."
+    },
+    {
+      "stage": "pre",
+      "question": "What does 'multi-head' mean in multi-head attention?",
+      "options": [
+        "Multiple transformer blocks stacked",
+        "Running several independent attention functions in parallel, each with different projections",
+        "Attending to multiple sequence positions at once",
+        "Using multiple datasets during training"
+      ],
+      "correct": 1,
+      "explanation": "Multi-head attention runs h independent attention heads in parallel, each with its own Q/K/V projection matrices. Each head can learn to attend to different aspects of the input (syntax, semantics, position, etc.)."
+    },
+    {
+      "stage": "post",
+      "question": "If the model dimension is d_model=512 and there are 8 heads, what is the dimension per head?",
+      "options": [
+        "512",
+        "4096",
+        "64",
+        "128"
+      ],
+      "correct": 2,
+      "explanation": "Each head operates on d_model / num_heads = 512 / 8 = 64 dimensions. The heads are run in parallel and their outputs are concatenated back to d_model before a final linear projection."
+    },
+    {
+      "stage": "post",
+      "question": "Why do we scale the dot product by 1/√d_k before applying softmax?",
+      "options": [
+        "To make the model train faster",
+        "To reduce memory usage",
+        "Because large dot products push softmax into saturation regions with tiny gradients",
+        "To normalize the output to sum to 1"
+      ],
+      "correct": 2,
+      "explanation": "When d_k is large, dot products grow in magnitude, pushing softmax outputs toward 0 or 1 where gradients vanish. Scaling by 1/√d_k keeps the variance around 1, keeping softmax in a well-behaved gradient region."
+    },
+    {
+      "stage": "post",
+      "question": "What is the purpose of the final linear projection after concatenating all attention heads?",
+      "options": [
+        "To apply a non-linearity",
+        "To reduce the concatenated head outputs back to d_model and mix information across heads",
+        "To normalize the attention weights",
+        "To apply positional encoding"
+      ],
+      "correct": 1,
+      "explanation": "Concatenating h heads gives h × d_head = d_model dimensions, but each head operated independently. The final W_O projection allows the model to mix information across heads, creating a combined representation."
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the goal of coreference resolution?",
+      "options": [
+        "To group all mentions in a text that refer to the same real-world entity.",
+        "To translate pronouns into another language.",
+        "To find all named entities in a document.",
+        "To correct spelling errors in names."
+      ],
+      "correct": 0,
+      "explanation": "Coreference resolution links together mentions like 'Tim Cook', 'he', and 'the CEO' into a single cluster representing the same person."
+    },
+    {
+      "stage": "post",
+      "question": "Which mention type refers to an entity introduced pages or sentences earlier?",
+      "options": [
+        "Anaphora",
+        "Cataphora",
+        "Bridging",
+        "Appositive"
+      ],
+      "correct": 0,
+      "explanation": "Anaphora is the most common form of coreference, where a later expression (like 'he') refers back to an earlier entity (like 'John')."
+    },
+    {
+      "stage": "post",
+      "question": "Why is a 'singleton explosion' a problem in coreference evaluation?",
+      "options": [
+        "Some systems incorrectly label every single mention as its own unique entity cluster.",
+        "It makes the model run too fast.",
+        "It causes the model to hallucinate new names.",
+        "It only happens in multilingual models."
+      ],
+      "correct": 0,
+      "explanation": "If a model fails to link any mentions, it might just report each word as its own entity. Some metrics (like B³) can be artificially inflated by this behavior."
+    },
+    {
+      "stage": "post",
+      "question": "What is the integration pattern for 2026 production pipelines?",
+      "options": [
+        "NER -> Coref -> merge mentions into entities.",
+        "Coref -> NER -> tokenization.",
+        "LLM generation -> Coref check.",
+        "Translation -> Coref -> Summary."
+      ],
+      "correct": 0,
+      "explanation": "Running Named Entity Recognition first provides the high-quality spans that Coreference Resolution then groups together to build a complete picture of each entity's mentions."
+    }
+  ]
+}

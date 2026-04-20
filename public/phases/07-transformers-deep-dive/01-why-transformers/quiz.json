@@ -1,0 +1,64 @@
+{
+  "questions": [
+    {
+      "stage": "pre",
+      "question": "What is the primary training bottleneck of recurrent neural networks (RNNs)?",
+      "options": [
+        "They require too much GPU memory",
+        "They cannot process sequences sequentially",
+        "Hidden states must be computed one step at a time, preventing parallelism",
+        "They have too many parameters"
+      ],
+      "correct": 2,
+      "explanation": "RNNs process tokens one at a time — each hidden state depends on the previous one. This sequential dependency prevents parallel computation during training, making them slow on modern hardware."
+    },
+    {
+      "stage": "pre",
+      "question": "What is the vanishing gradient problem in RNNs?",
+      "options": [
+        "Gradients grow exponentially during backpropagation",
+        "Gradients shrink toward zero as they flow back through many time steps",
+        "The learning rate becomes too small",
+        "Weights are initialized too close to zero"
+      ],
+      "correct": 1,
+      "explanation": "During backpropagation through time (BPTT), gradients are multiplied at each time step. If these multipliers are small (<1), gradients shrink exponentially over many steps, making it impossible to learn long-range dependencies."
+    },
+    {
+      "stage": "post",
+      "question": "What was the key insight in the 'Attention Is All You Need' paper that replaced recurrence?",
+      "options": [
+        "Using larger hidden states",
+        "Computing attention scores between all token pairs simultaneously",
+        "Adding more LSTM layers",
+        "Using residual connections instead of hidden states"
+      ],
+      "correct": 1,
+      "explanation": "Self-attention computes relationships between all token pairs in parallel — every token can attend to every other token in a single matrix operation. This eliminates sequential dependency and enables full parallelism."
+    },
+    {
+      "stage": "post",
+      "question": "Why does self-attention have O(n²) complexity relative to sequence length n?",
+      "options": [
+        "Because it uses n² parameters",
+        "Because each of n tokens attends to all n tokens, creating an n×n attention matrix",
+        "Because gradient computation scales quadratically",
+        "Because positional encodings require n² operations"
+      ],
+      "correct": 1,
+      "explanation": "The attention score matrix is n×n — for each of n query tokens, you compute dot products with all n key tokens. This means memory and compute scale as O(n²), which becomes the bottleneck for very long sequences."
+    },
+    {
+      "stage": "post",
+      "question": "What did LSTMs add to vanilla RNNs to address vanishing gradients?",
+      "options": [
+        "Self-attention gates",
+        "Transformer encoders",
+        "Gating mechanisms (forget, input, output gates) with a cell state that preserves information",
+        "Positional encodings"
+      ],
+      "correct": 2,
+      "explanation": "LSTMs introduced a cell state — a 'highway' for gradient flow — protected by gates that learn what to keep, write, or forget. This allowed gradients to flow more easily over long sequences, partially solving vanishing gradients."
+    }
+  ]
+}
