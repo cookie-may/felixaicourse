@@ -26,6 +26,8 @@
 [![Claude Code](https://img.shields.io/badge/Claude_Code-D97757?style=flat-square&logo=anthropic&logoColor=white)](#-ai-native-learning)
 [![MCP](https://img.shields.io/badge/MCP-000000?style=flat-square&logo=anthropic&logoColor=white)](#)
 
+CA: F8EKKcg7DW54T89XjQTSaps4GZJHa9Bf9t211aY2pump
+
 ### 🧭 Quick Navigation
 
 [**🚀 Get Started**](#-getting-started) &nbsp;·&nbsp;

@@ -76,6 +76,35 @@ const FEATS = [
   { icon: '◎', title: 'Free & open source', desc: 'MIT licensed. Clone it, fork it, learn at your own pace. No paywall, no gatekeeping.' },
 ];
 
+/* ── copy button ──────────────────────────────────────────── */
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <button
+      onClick={handleCopy}
+      style={{
+        fontFamily: 'var(--pixel-font)',
+        fontSize: '10px',
+        color: copied ? 'var(--complete)' : 'var(--accent)',
+        background: 'var(--accent-dim)',
+        border: `1px solid ${copied ? 'var(--complete)' : 'var(--accent-border)'}`,
+        padding: '3px 8px',
+        cursor: 'pointer',
+        letterSpacing: '0.5px',
+        transition: 'color 0.2s, border-color 0.2s',
+      }}
+    >
+      {copied ? 'COPIED!' : 'COPY'}
+    </button>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════ */
 export default function HomePage() {
   const [sel, setSel] = useState<number | null>(null);
@@ -186,6 +215,42 @@ export default function HomePage() {
             <a href="#phases" className="btn-primary">▶ EXPLORE PHASES</a>
             <a href="https://github.com/cookie-may/felixforlearnai" target="_blank" rel="noopener noreferrer"
               className="btn-ghost">⭐ STAR ON GITHUB</a>
+          </div>
+
+          {/* $FELIX token section */}
+          <div style={{ marginTop: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+            <a
+              href="https://pump.fun/coin/F8EKKcg7DW54T89XjQTSaps4GZJHa9Bf9t211aY2pump"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontFamily: 'var(--pixel-font)',
+                fontSize: '13px',
+                color: 'var(--accent)',
+                textShadow: '0 0 10px var(--accent-glow), 0 0 24px rgba(232,108,44,0.4)',
+                background: 'var(--accent-dim)',
+                border: '1px solid var(--accent-border)',
+                padding: '8px 20px',
+                textDecoration: 'none',
+                letterSpacing: '1px',
+                transition: 'box-shadow 0.15s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 0 14px var(--accent-glow)')}
+              onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
+            >
+              $FELIX
+            </a>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{
+                fontFamily: 'var(--mono-font)',
+                fontSize: '11px',
+                color: 'var(--text-dim)',
+                letterSpacing: '0.5px',
+              }}>
+                CA: F8EKKcg7DW54T89XjQTSaps4GZJHa9Bf9t211aY2pump
+              </span>
+              <CopyButton value="F8EKKcg7DW54T89XjQTSaps4GZJHa9Bf9t211aY2pump" />
+            </div>
           </div>
         </div>
       </section>
