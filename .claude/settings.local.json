@@ -18,7 +18,10 @@
       "Bash(git remote *)",
       "Bash(cat)",
       "Bash(chmod +x /tmp/redate.sh)",
-      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --env-filter 'source /tmp/redate.sh' HEAD)"
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --env-filter 'source /tmp/redate.sh' HEAD)",
+      "Bash(git -C \"C:/Danann/1. Projects/1. Web Development/next JS/WP/2026/felixforlearnai\" add src/components/Header.tsx src/app/page.tsx)",
+      "Bash(git -C 'C:/Danann/1. Projects/1. Web Development/next JS/WP/2026/felixforlearnai' commit -m ' *)",
+      "Bash(git *)"
     ]
   }
 }
