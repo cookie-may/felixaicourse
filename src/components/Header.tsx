@@ -5,6 +5,51 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 
+const CA = 'F8EKKcg7DW54T89XjQTSaps4GZJHa9Bf9t211aY2pump';
+
+function CopyCA() {
+  const [copied, setCopied] = useState(false);
+  const handle = () => {
+    navigator.clipboard.writeText(CA).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <span style={{
+        fontFamily: 'var(--mono-font)',
+        fontSize: '10px',
+        color: 'var(--text-dim)',
+        letterSpacing: '0.3px',
+        maxWidth: '160px',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+      }}>
+        CA: {CA}
+      </span>
+      <button
+        onClick={handle}
+        style={{
+          fontFamily: 'var(--pixel-font)',
+          fontSize: '9px',
+          color: copied ? 'var(--complete)' : 'var(--accent)',
+          background: 'var(--accent-dim)',
+          border: `1px solid ${copied ? 'var(--complete)' : 'var(--accent-border)'}`,
+          padding: '2px 6px',
+          cursor: 'pointer',
+          letterSpacing: '0.5px',
+          transition: 'color 0.2s, border-color 0.2s',
+          flexShrink: 0,
+        }}
+      >
+        {copied ? 'COPIED!' : 'COPY'}
+      </button>
+    </div>
+  );
+}
+
 function XIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -46,25 +91,31 @@ export default function Header() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
 
-        {/* Logo */}
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
-          <Image
-            src="/logo.png" alt="felix" width={38} height={38}
-            className="logo-glow"
-            style={{ borderRadius: '4px' }}
-          />
-          <span style={{
-            fontFamily: 'var(--pixel-font)',
-            fontSize: '16px',
-            color: 'var(--accent)',
-            letterSpacing: '0.5px',
-            textShadow: '0 0 10px var(--accent-glow), 0 0 28px rgba(232,108,44,0.3)',
-            lineHeight: 1,
-          }}>
-            FELIX<br />
-            <span style={{ color: 'var(--text-muted)', textShadow: 'none', fontSize: '12px' }}>forlearnai</span>
-          </span>
-        </Link>
+        {/* Logo + CA */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+            <Image
+              src="/logo.png" alt="felix" width={38} height={38}
+              className="logo-glow"
+              style={{ borderRadius: '4px' }}
+            />
+            <span style={{
+              fontFamily: 'var(--pixel-font)',
+              fontSize: '16px',
+              color: 'var(--accent)',
+              letterSpacing: '0.5px',
+              textShadow: '0 0 10px var(--accent-glow), 0 0 28px rgba(232,108,44,0.3)',
+              lineHeight: 1,
+            }}>
+              FELIX<br />
+              <span style={{ color: 'var(--text-muted)', textShadow: 'none', fontSize: '12px' }}>forlearnai</span>
+            </span>
+          </Link>
+          <div className="hidden md:flex" style={{ alignItems: 'center' }}>
+            <div style={{ width: '1px', height: '24px', background: 'var(--border)', marginRight: '16px' }} />
+            <CopyCA />
+          </div>
+        </div>
 
         {/* Desktop nav */}
         <nav style={{ display: 'flex', alignItems: 'center', gap: '24px' }} className="hidden md:flex">
